@@ -1,0 +1,7 @@
+{
+  "hash": "1a2b3c4d",
+  "stage": "push",
+  "summary": "Initialize wallet pipeline",
+  "files": ["data/wallet/staging.json", "data/wallet/commits/1a2b3c4d.json"],
+  "createdAt": "2026-04-01T10:00:00.000Z"
+}

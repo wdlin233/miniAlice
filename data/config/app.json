@@ -1,0 +1,13 @@
+{
+  "project": "MiniAlice",
+  "version": "0.1.0",
+  "defaultModel": "gpt-4.1-mini",
+  "session": {
+    "format": "jsonl",
+    "compressionThresholdMessages": 80
+  },
+  "sandbox": {
+    "playheadTime": "2026-01-01T00:00:00.000Z"
+  },
+  "tools": ["analysis", "trading", "browser"]
+}
