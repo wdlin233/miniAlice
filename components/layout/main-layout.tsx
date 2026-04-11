@@ -26,16 +26,22 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    const saved = localStorage.getItem('sidebarOpen');
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem('sidebarCollapsed');
-    return saved !== null ? JSON.parse(saved) : false;
-  });
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
+
+  // 客户端初始化：从localStorage读取状态
+  useEffect(() => {
+    const savedOpen = localStorage.getItem('sidebarOpen');
+    if (savedOpen !== null) {
+      setSidebarOpen(JSON.parse(savedOpen));
+    }
+    const savedCollapsed = localStorage.getItem('sidebarCollapsed');
+    if (savedCollapsed !== null) {
+      setSidebarCollapsed(JSON.parse(savedCollapsed));
+    }
+  }, []);
 
   // 持久化侧边栏状态
   useEffect(() => {
@@ -104,16 +110,19 @@ export function MainLayout({ children }: MainLayoutProps) {
               >
                 <X className="h-5 w-5" />
               </Button>
-              {!sidebarCollapsed && (
-                <div className="font-semibold">导航</div>
-              )}
+              <div className={`font-semibold transition-all duration-300 ${sidebarCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>
+                导航
+              </div>
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleSidebarCollapse}
+              className="transition-transform duration-300"
             >
-              {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              <div className={`transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`}>
+                <ChevronLeft className="h-4 w-4" />
+              </div>
             </Button>
           </div>
           <nav className="p-4 space-y-1">
@@ -125,10 +134,12 @@ export function MainLayout({ children }: MainLayoutProps) {
                   href={item.href as any}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent hover:text-accent-foreground'}`}
                 >
-                  {item.icon}
-                  {!sidebarCollapsed && (
-                    <span>{item.label}</span>
-                  )}
+                  <div className="flex-shrink-0">
+                    {item.icon}
+                  </div>
+                  <span className={`transition-all duration-300 ${sidebarCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
@@ -136,7 +147,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         </aside>
 
         {/* 主内容 */}
-        <main className="flex-1 transition-all duration-300">
+        <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? (sidebarCollapsed ? 'md:ml-18' : 'md:ml-64') : 'md:ml-0'}`}>
           {children}
         </main>
       </div>
