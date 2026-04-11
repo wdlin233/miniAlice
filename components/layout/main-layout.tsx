@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Menu, X, Home, BarChart3, MessageSquare, TrendingUp, FileText, Moon, Sun, ChevronLeft, ChevronRight } from "lucide-react";
+import { Menu, X, Home, BarChart3, MessageSquare, TrendingUp, FileText, Moon, Sun, ChevronLeft } from "lucide-react";
+import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 interface NavItem {
   label: string;
-  href: string;
+  href: Route;
   icon: React.ReactNode;
 }
 
@@ -131,7 +132,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               return (
                 <Link
                   key={item.href}
-                  href={item.href as any}
+                  href={item.href}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent hover:text-accent-foreground'}`}
                 >
                   <div className="flex-shrink-0">

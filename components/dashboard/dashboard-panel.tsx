@@ -2,6 +2,7 @@ import { Clock3, FileText, GitCommitHorizontal, WalletCards, type LucideIcon } f
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { WalletControls } from "@/components/dashboard/wallet-controls";
 import { listSessions } from "@/lib/storage/sessions";
 import { listWalletCommits, readStagingDraft } from "@/lib/storage/wallet";
 
@@ -74,12 +75,20 @@ export async function DashboardPanel() {
           <CardTitle className="text-base">Wallet Pipeline</CardTitle>
           <CardDescription>add &gt; commit &gt; push</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">add</Badge>
-          <span className="text-sm text-muted-foreground">staging.json</span>
-          <Badge variant="secondary">commit</Badge>
-          <span className="text-sm text-muted-foreground">wallet/commits/*.json</span>
-          <Badge className="bg-accent text-accent-foreground hover:bg-accent">push</Badge>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">add</Badge>
+            <span className="text-sm text-muted-foreground">staging.json</span>
+            <Badge variant="secondary">commit</Badge>
+            <span className="text-sm text-muted-foreground">wallet/commits/*.json</span>
+            <Badge className="bg-accent text-accent-foreground hover:bg-accent">push</Badge>
+          </div>
+
+          <WalletControls
+            initialStagingSummary={staging.summary}
+            initialStagingFiles={staging.files}
+            initialLatestHash={latestCommit?.hash}
+          />
         </CardContent>
       </Card>
     </section>
