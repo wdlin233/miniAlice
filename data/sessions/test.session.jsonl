@@ -1,0 +1,6 @@
+{"role":"user","content":"Hello, how are you?","createdAt":"2026-04-10T00:00:00.000Z"}
+{"role":"assistant","content":"I'm doing well, thank you! How can I help you today?","createdAt":"2026-04-10T00:00:01.000Z"}
+{"role":"user","content":"I want to know about the weather today","createdAt":"2026-04-10T00:00:02.000Z"}
+{"role":"assistant","content":"I'm sorry, I don't have real-time weather information. But I can help you with other questions.","createdAt":"2026-04-10T00:00:03.000Z"}
+{"role":"user","content":"Tell me about artificial intelligence","createdAt":"2026-04-10T00:00:04.000Z"}
+{"role":"assistant","content":"Artificial intelligence (AI) refers to the development of computer systems that can perform tasks that typically require human intelligence, such as visual perception, speech recognition, decision-making, and language translation.","createdAt":"2026-04-10T00:00:05.000Z"}

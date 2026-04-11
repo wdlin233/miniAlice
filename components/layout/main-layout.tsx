@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Menu, X, Home, BarChart3, MessageSquare, TrendingUp, FileText, Moon, Sun, ChevronLeft, ChevronRight } from "lucide-react";
+import { Menu, X, Home, BarChart3, MessageSquare, TrendingUp, FileText, Moon, Sun, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
