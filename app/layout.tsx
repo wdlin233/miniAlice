@@ -3,6 +3,8 @@ import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "./globals.css";
+import { MainLayout } from "@/components/layout/main-layout";
+import { ThemeProvider } from "@/components/layout/theme-provider";
 
 const fontSans = Space_Grotesk({
   subsets: ["latin"],
@@ -24,9 +26,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" suppressHydrationWarning>
       <body className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased`}>
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <MainLayout>
+            {children}
+          </MainLayout>
+        </ThemeProvider>
       </body>
     </html>
   );

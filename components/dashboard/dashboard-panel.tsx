@@ -72,7 +72,7 @@ export async function DashboardPanel() {
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Wallet Pipeline</CardTitle>
-          <CardDescription>add -> commit -> push</CardDescription>
+          <CardDescription>add &gt; commit &gt; push</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary">add</Badge>

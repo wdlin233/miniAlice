@@ -1,17 +1,24 @@
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel";
-import { Sidebar } from "@/components/layout/sidebar";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen px-4 py-4 md:px-6 md:py-6">
-      <div className="mx-auto grid max-w-[1500px] gap-4 lg:grid-cols-[280px_1fr]">
-        <Sidebar />
-        <div className="grid gap-4 lg:grid-rows-[auto_1fr]">
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="animate-fade-in-up">
+        <h1 className="text-3xl font-bold tracking-tight">MiniAlice</h1>
+        <p className="mt-2 text-muted-foreground">
+          文件驱动的个人 AI 量化交易 Agent
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="animate-fade-in-up">
           <DashboardPanel />
+        </div>
+        <div className="animate-fade-in-up">
           <ChatPanel />
         </div>
       </div>
-    </main>
+    </div>
   );
 }
