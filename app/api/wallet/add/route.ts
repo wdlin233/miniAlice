@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
-import { walletPushInputSchema } from "@/lib/schemas/wallet";
-import { pushCommit } from "@/lib/storage/wallet";
+import { walletAddInputSchema } from "@/lib/schemas/wallet";
+import { addWalletDraft } from "@/lib/storage/wallet";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,11 +18,7 @@ function responseByError(error: unknown) {
     );
   }
 
-  const message = error instanceof Error ? error.message : "Wallet push failed.";
-
-  if (/not found/i.test(message)) {
-    return NextResponse.json({ error: message }, { status: 404 });
-  }
+  const message = error instanceof Error ? error.message : "Wallet add failed.";
 
   if (/empty|invalid|required/i.test(message)) {
     return NextResponse.json({ error: message }, { status: 400 });
@@ -33,10 +29,10 @@ function responseByError(error: unknown) {
 
 export async function POST(request: Request) {
   try {
-    const body = walletPushInputSchema.parse(await request.json());
-    const commit = await pushCommit(body.hash);
+    const body = walletAddInputSchema.parse(await request.json());
+    const draft = await addWalletDraft(body.summary, body.files);
 
-    return NextResponse.json({ action: "push", commit });
+    return NextResponse.json({ action: "add", draft });
   } catch (error) {
     return responseByError(error);
   }

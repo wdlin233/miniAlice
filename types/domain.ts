@@ -22,4 +22,5 @@ export interface WalletCommit {
   summary: string;
   files: string[];
   createdAt: string;
+  pushedAt?: string;
 }
