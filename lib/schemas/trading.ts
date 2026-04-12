@@ -60,8 +60,25 @@ export const tradingRiskConfigResponseSchema = z.object({
   config: tradingRiskConfigSchema
 });
 
+export const tradingRiskLogSchema = z.object({
+  id: z.string().uuid(),
+  symbol: z.string(),
+  side: tradingSideSchema,
+  decision: tradingDecisionSchema,
+  score: z.number().min(0).max(100),
+  policyVersion: z.string(),
+  summary: z.string(),
+  createdAt: z.string().datetime()
+});
+
+export const tradingRiskHistoryResponseSchema = z.object({
+  tool: z.literal("trading"),
+  items: z.array(tradingRiskLogSchema)
+});
+
 export type TradingRiskConfig = z.infer<typeof tradingRiskConfigSchema>;
 export type TradingRiskRequest = z.infer<typeof tradingRiskRequestSchema>;
 export type TradingRiskRule = z.infer<typeof tradingRiskRuleSchema>;
 export type TradingRiskResult = z.infer<typeof tradingRiskResultSchema>;
 export type TradingSide = z.infer<typeof tradingSideSchema>;
+export type TradingRiskLog = z.infer<typeof tradingRiskLogSchema>;

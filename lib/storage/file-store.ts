@@ -9,6 +9,7 @@ export const dataPaths = {
   sessions: path.join(dataRoot, "sessions"),
   wallet: path.join(dataRoot, "wallet"),
   walletCommits: path.join(dataRoot, "wallet", "commits"),
+  trading: path.join(dataRoot, "trading"),
   sandbox: path.join(dataRoot, "sandbox"),
   persona: path.join(dataRoot, "persona.md")
 };

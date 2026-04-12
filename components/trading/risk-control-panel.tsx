@@ -6,7 +6,12 @@ import { Loader2, ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { TradingRiskConfig, TradingRiskResult, TradingSide } from "@/lib/schemas/trading";
+import type {
+  TradingRiskConfig,
+  TradingRiskLog,
+  TradingRiskResult,
+  TradingSide
+} from "@/lib/schemas/trading";
 
 interface TradingRiskConfigResponse {
   tool: "trading";
@@ -15,6 +20,11 @@ interface TradingRiskConfigResponse {
 
 interface ErrorResponse {
   error?: string;
+}
+
+interface TradingRiskHistoryResponse {
+  tool: "trading";
+  items: TradingRiskLog[];
 }
 
 interface FormState {
@@ -64,6 +74,7 @@ export function RiskControlPanel() {
   const [form, setForm] = useState<FormState>(initialFormState);
   const [config, setConfig] = useState<TradingRiskConfig | null>(null);
   const [result, setResult] = useState<TradingRiskResult | null>(null);
+  const [history, setHistory] = useState<TradingRiskLog[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -89,7 +100,27 @@ export function RiskControlPanel() {
       }
     }
 
+    async function loadHistory() {
+      try {
+        const response = await fetch("/api/trading/risk/history?limit=8", {
+          method: "GET",
+          cache: "no-store"
+        });
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as TradingRiskHistoryResponse;
+        if (mounted) {
+          setHistory(data.items);
+        }
+      } catch {
+        // History is optional and should not block the panel.
+      }
+    }
+
     void loadConfig();
+    void loadHistory();
 
     return () => {
       mounted = false;
@@ -132,6 +163,15 @@ export function RiskControlPanel() {
       const data = (await response.json()) as TradingRiskResult;
       setResult(data);
       setNotice(`风险评估完成：${data.decision.toUpperCase()} (score ${data.score})`);
+
+      const historyResponse = await fetch("/api/trading/risk/history?limit=8", {
+        method: "GET",
+        cache: "no-store"
+      });
+      if (historyResponse.ok) {
+        const historyData = (await historyResponse.json()) as TradingRiskHistoryResponse;
+        setHistory(historyData.items);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown risk evaluation error.";
       setNotice(`评估失败：${message}`);
@@ -240,6 +280,28 @@ export function RiskControlPanel() {
           ) : null}
         </div>
       ) : null}
+
+      <div className="space-y-2 rounded-lg border bg-background/70 p-4">
+        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Recent Risk Evaluations</p>
+        {history.length === 0 ? <p className="text-sm text-muted-foreground">暂无历史评估记录</p> : null}
+        {history.map((entry) => (
+          <div key={entry.id} className="rounded-md border p-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">{entry.decision}</Badge>
+                <span className="text-sm font-medium">
+                  {entry.symbol} {entry.side.toUpperCase()}
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground">score {entry.score}</span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{entry.summary}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {new Date(entry.createdAt).toLocaleString("zh-CN", { hour12: false })}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

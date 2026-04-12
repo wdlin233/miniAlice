@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import {
   tradingRiskRequestSchema,
   tradingRiskResultSchema,
@@ -7,6 +9,7 @@ import {
   type TradingRiskResult,
   type TradingRiskRule
 } from "@/lib/schemas/trading";
+import { appendTradingRiskLog } from "@/lib/storage/trading-risk-log";
 import { readTradingRiskConfig } from "@/lib/storage/trading-risk";
 
 interface TradingRiskContext {
@@ -26,6 +29,23 @@ type RuleEvaluation = {
 
 function round2(value: number): number {
   return Number(value.toFixed(2));
+}
+
+async function appendTradingRiskLogSafe(result: TradingRiskResult, request: TradingRiskRequest): Promise<void> {
+  try {
+    await appendTradingRiskLog({
+      id: crypto.randomUUID(),
+      symbol: request.symbol,
+      side: request.side,
+      decision: result.decision,
+      score: result.score,
+      policyVersion: result.policyVersion,
+      summary: `${request.symbol} ${request.side.toUpperCase()} -> ${result.decision.toUpperCase()} (${result.score})`,
+      createdAt: new Date().toISOString()
+    });
+  } catch {
+    // Keep risk evaluation flow non-blocking when history write fails.
+  }
 }
 
 function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
@@ -214,7 +234,7 @@ export async function evaluateTradingRisk(input: TradingRiskRequest): Promise<Tr
     new Set(ruleEvaluations.flatMap((item) => (item.recommendation ? [item.recommendation] : [])))
   );
 
-  return tradingRiskResultSchema.parse({
+  const result = tradingRiskResultSchema.parse({
     tool: "trading",
     decision,
     score,
@@ -227,6 +247,9 @@ export async function evaluateTradingRisk(input: TradingRiskRequest): Promise<Tr
     rules,
     recommendations
   });
+
+  await appendTradingRiskLogSafe(result, input);
+  return result;
 }
 
 export async function evaluateTradingRiskFromPayload(payload: unknown): Promise<TradingRiskResult> {
