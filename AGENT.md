@@ -62,5 +62,6 @@ data/
 - [ ] Week 2: Session 自动压缩策略
 - [ ] Week 2: Sandbox playheadTime 时间隔离
 - [ ] Week 3: Browser Tool 接入行情与资讯
+- [ ] Week 3: Browser Tool 行情/资讯 API + Dashboard 展示
 - [ ] Week 3: Trading Tool 风险控制策略
 - [ ] Week 4: E2E 测试 + 发布文档
