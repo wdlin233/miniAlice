@@ -230,6 +230,35 @@ export const tradingWalletPushExecutionResponseSchema = z.object({
   execution: tradingWalletPushExecutionSchema
 });
 
+export const sandboxTradingReplayRequestSchema = z.object({
+  sandboxId: z.string().trim().min(1),
+  limit: z.coerce.number().int().positive().max(200).default(20),
+  decision: tradingDecisionSchema.optional()
+});
+
+export const sandboxTradingReplayItemSchema = z.object({
+  orderId: z.string().uuid(),
+  symbol: z.string(),
+  side: tradingSideSchema,
+  source: tradingOrderSourceSchema,
+  originalDecision: tradingDecisionSchema,
+  replayedDecision: tradingDecisionSchema,
+  match: z.boolean(),
+  originalScore: z.number().min(0).max(100),
+  replayedScore: z.number().min(0).max(100),
+  createdAt: z.string().datetime()
+});
+
+export const sandboxTradingReplayResultSchema = z.object({
+  tool: z.literal("trading"),
+  sandboxId: z.string(),
+  playheadTime: z.string().datetime(),
+  total: z.number().int().nonnegative(),
+  matched: z.number().int().nonnegative(),
+  mismatched: z.number().int().nonnegative(),
+  items: z.array(sandboxTradingReplayItemSchema)
+});
+
 export type TradingRiskConfig = z.infer<typeof tradingRiskConfigSchema>;
 export type TradingRiskRequest = z.infer<typeof tradingRiskRequestSchema>;
 export type TradingRiskRule = z.infer<typeof tradingRiskRuleSchema>;
@@ -248,3 +277,6 @@ export type TradingPositionRecommendation = z.infer<typeof tradingPositionRecomm
 export type TradingRecommendationResult = z.infer<typeof tradingRecommendationResultSchema>;
 export type TradingRecommendationLog = z.infer<typeof tradingRecommendationLogSchema>;
 export type TradingWalletPushExecution = z.infer<typeof tradingWalletPushExecutionSchema>;
+export type SandboxTradingReplayRequest = z.infer<typeof sandboxTradingReplayRequestSchema>;
+export type SandboxTradingReplayResult = z.infer<typeof sandboxTradingReplayResultSchema>;
+export type SandboxTradingReplayItem = z.infer<typeof sandboxTradingReplayItemSchema>;

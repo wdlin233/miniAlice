@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RiskControlPanel } from "@/components/trading/risk-control-panel";
+import { SandboxReplayPanel } from "@/components/trading/sandbox-replay-panel";
 import { CandlestickChart, WalletCards, GitCommitHorizontal, TrendingUp } from "lucide-react";
 
 export default function TradingPage() {
@@ -116,6 +117,16 @@ export default function TradingPage() {
         </CardHeader>
         <CardContent>
           <RiskControlPanel />
+        </CardContent>
+      </Card>
+
+      <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
+        <CardHeader>
+          <CardTitle>Sandbox 回放风控验证</CardTitle>
+          <CardDescription>在 sandbox playheadTime 下回放 Trading 风控决策一致性</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SandboxReplayPanel />
         </CardContent>
       </Card>
     </div>
