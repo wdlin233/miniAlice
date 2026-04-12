@@ -54,17 +54,20 @@ data/
 - [ ] Dashboard 可读取并展示关键状态
 
 ## 当前 Tasks（每周更新）
-- [ ] Week 1: 项目初始化 + AGENT.md + 基础 Dashboard
-- [ ] Week 1: Chat 面板 + /api/analysis + Session JSONL 落盘
-- [ ] Week 1: Wallet add/commit/push API 骨架
-- [ ] Week 1: Dashboard 接入 Wallet add/commit/push 操作面板
-- [ ] Week 1: Dashboard 展示 Wallet add/commit/push 操作结果日志
-- [ ] Week 2: Session 自动压缩策略
-- [ ] Week 2: Sandbox playheadTime 时间隔离
-- [ ] Week 3: Browser Tool 接入行情与资讯
-- [ ] Week 3: Browser Tool 行情/资讯 API + Dashboard 展示
-- [ ] Week 3: Browser Tool 资讯来源切换 + 手动刷新 API
-- [ ] Week 3: Trading Tool 风险控制策略
-- [ ] Week 3: Trading Tool 风控评估 API + Trading 页面接入
-- [ ] Week 3: Trading Tool 风控评估历史日志（JSONL）
+- [x] Week 1: 项目初始化 + AGENT.md + 基础 Dashboard
+- [x] Week 1: Chat 面板 + /api/analysis + Session JSONL 落盘
+- [x] Week 1: Wallet add/commit/push API 骨架
+- [x] Week 1: Dashboard 接入 Wallet add/commit/push 操作面板
+- [x] Week 1: Dashboard 展示 Wallet add/commit/push 操作结果日志
+- [x] Week 2: Session 自动压缩策略
+- [x] Week 2: Sandbox playheadTime 时间隔离
+- [x] Week 3: Browser Tool 接入行情与资讯
+- [x] Week 3: Browser Tool 行情/资讯 API + Dashboard 展示
+- [x] Week 3: Browser Tool 资讯来源切换 + 手动刷新 API
+- [x] Week 3: Trading Tool 风险控制策略
+- [x] Week 3: Trading Tool 风控评估 API + Trading 页面接入
+- [x] Week 3: Trading Tool 风控评估历史日志（JSONL）
+- [ ] Week 4: Trading Tool 下单/撤单 API（tool=trading）
+- [ ] Week 4: Trading Tool 仓位建议策略 + Wallet push 执行联动
+- [ ] Week 4: Sandbox 回放模式接入 Trading 风控验证
 - [ ] Week 4: E2E 测试 + 发布文档
