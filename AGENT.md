@@ -67,7 +67,7 @@ data/
 - [x] Week 3: Trading Tool 风险控制策略
 - [x] Week 3: Trading Tool 风控评估 API + Trading 页面接入
 - [x] Week 3: Trading Tool 风控评估历史日志（JSONL）
-- [ ] Week 4: Trading Tool 下单/撤单 API（tool=trading）
+- [x] Week 4: Trading Tool 下单/撤单 API（tool=trading）
 - [ ] Week 4: Trading Tool 仓位建议策略 + Wallet push 执行联动
 - [ ] Week 4: Sandbox 回放模式接入 Trading 风控验证
 - [ ] Week 4: E2E 测试 + 发布文档

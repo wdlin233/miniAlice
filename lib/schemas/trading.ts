@@ -3,6 +3,9 @@ import { z } from "zod";
 export const tradingSideSchema = z.enum(["buy", "sell"]);
 export const tradingDecisionSchema = z.enum(["approve", "caution", "reject"]);
 export const tradingRuleStatusSchema = z.enum(["pass", "warn", "fail"]);
+export const tradingOrderTypeSchema = z.enum(["market", "limit"]);
+export const tradingOrderSourceSchema = z.enum(["manual", "wallet_push"]);
+export const tradingOrderStatusSchema = z.enum(["submitted", "canceled", "rejected"]);
 
 export const tradingRiskConfigSchema = z.object({
   maxLeverage: z.coerce.number().positive().max(125).default(5),
@@ -76,9 +79,84 @@ export const tradingRiskHistoryResponseSchema = z.object({
   items: z.array(tradingRiskLogSchema)
 });
 
+export const tradingOrderCreateInputSchema = z
+  .object({
+    symbol: z
+      .string()
+      .trim()
+      .min(2)
+      .max(20)
+      .regex(/^[A-Za-z0-9/_-]+$/, "symbol contains unsupported characters"),
+    side: tradingSideSchema,
+    orderType: tradingOrderTypeSchema.default("market"),
+    leverage: z.coerce.number().positive().max(125).default(1),
+    notionalUsd: z.coerce.number().positive(),
+    limitPrice: z.coerce.number().positive().optional(),
+    stopLossPercent: z.coerce.number().positive().max(100).default(1),
+    accountEquityUsd: z.coerce.number().positive(),
+    currentExposurePercent: z.coerce.number().nonnegative().max(100).default(0),
+    dailyLossPercent: z.coerce.number().nonnegative().max(100).default(0),
+    source: tradingOrderSourceSchema.default("manual"),
+    walletCommitHash: z
+      .string()
+      .trim()
+      .regex(/^[a-f0-9]{8}$/i, "walletCommitHash must be an 8-character SHA-256 prefix")
+      .optional()
+  })
+  .superRefine((value, context) => {
+    if (value.orderType === "limit" && value.limitPrice === undefined) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "limitPrice is required when orderType is limit",
+        path: ["limitPrice"]
+      });
+    }
+  });
+
+export const tradingOrderSchema = z.object({
+  id: z.string().uuid(),
+  symbol: z.string(),
+  side: tradingSideSchema,
+  orderType: tradingOrderTypeSchema,
+  leverage: z.number().positive(),
+  notionalUsd: z.number().positive(),
+  limitPrice: z.number().positive().optional(),
+  stopLossPercent: z.number().positive().max(100),
+  status: tradingOrderStatusSchema,
+  source: tradingOrderSourceSchema,
+  walletCommitHash: z.string().optional(),
+  riskDecision: tradingDecisionSchema,
+  riskScore: z.number().min(0).max(100),
+  riskRequest: tradingRiskRequestSchema.optional(),
+  reason: z.string().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  canceledAt: z.string().datetime().optional()
+});
+
+export const tradingOrderCancelInputSchema = z.object({
+  orderId: z.string().uuid(),
+  reason: z.string().trim().min(1).max(200).optional()
+});
+
+export const tradingOrderListResponseSchema = z.object({
+  tool: z.literal("trading"),
+  items: z.array(tradingOrderSchema)
+});
+
+export const tradingOrderResponseSchema = z.object({
+  tool: z.literal("trading"),
+  order: tradingOrderSchema
+});
+
 export type TradingRiskConfig = z.infer<typeof tradingRiskConfigSchema>;
 export type TradingRiskRequest = z.infer<typeof tradingRiskRequestSchema>;
 export type TradingRiskRule = z.infer<typeof tradingRiskRuleSchema>;
 export type TradingRiskResult = z.infer<typeof tradingRiskResultSchema>;
 export type TradingSide = z.infer<typeof tradingSideSchema>;
 export type TradingRiskLog = z.infer<typeof tradingRiskLogSchema>;
+export type TradingOrderCreateInput = z.infer<typeof tradingOrderCreateInputSchema>;
+export type TradingOrder = z.infer<typeof tradingOrderSchema>;
+export type TradingOrderCancelInput = z.infer<typeof tradingOrderCancelInputSchema>;
+export type TradingOrderStatus = z.infer<typeof tradingOrderStatusSchema>;
+export type TradingOrderSource = z.infer<typeof tradingOrderSourceSchema>;
