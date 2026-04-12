@@ -1,0 +1,11 @@
+{
+  "maxLeverage": 5,
+  "warningLeverage": 4,
+  "maxNotionalPerTradeUsd": 2000,
+  "maxRiskPerTradePercent": 1.5,
+  "warningRiskPerTradePercent": 1,
+  "maxDailyLossPercent": 3,
+  "maxTotalExposurePercent": 35,
+  "minStopLossPercent": 0.4,
+  "policyVersion": "v1"
+}

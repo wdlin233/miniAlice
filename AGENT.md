@@ -65,4 +65,5 @@ data/
 - [ ] Week 3: Browser Tool 行情/资讯 API + Dashboard 展示
 - [ ] Week 3: Browser Tool 资讯来源切换 + 手动刷新 API
 - [ ] Week 3: Trading Tool 风险控制策略
+- [ ] Week 3: Trading Tool 风控评估 API + Trading 页面接入
 - [ ] Week 4: E2E 测试 + 发布文档

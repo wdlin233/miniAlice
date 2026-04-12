@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { RiskControlPanel } from "@/components/trading/risk-control-panel";
 import { CandlestickChart, WalletCards, GitCommitHorizontal, TrendingUp } from "lucide-react";
 
 export default function TradingPage() {
@@ -105,6 +106,16 @@ export default function TradingPage() {
             <Button variant="secondary" className="w-full">提交交易</Button>
             <Button variant="accent" className="w-full">执行交易</Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
+        <CardHeader>
+          <CardTitle>Trading Tool 风险控制策略</CardTitle>
+          <CardDescription>对下单意图执行规则化风险评估（tool=trading）</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RiskControlPanel />
         </CardContent>
       </Card>
     </div>
