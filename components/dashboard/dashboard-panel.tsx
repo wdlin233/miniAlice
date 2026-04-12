@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WalletControls } from "@/components/dashboard/wallet-controls";
 import { listSessions } from "@/lib/storage/sessions";
-import { listWalletCommits, readStagingDraft } from "@/lib/storage/wallet";
+import { listWalletCommits, listWalletOperationLogs, readStagingDraft } from "@/lib/storage/wallet";
 
 interface StatCardProps {
   title: string;
@@ -27,10 +27,11 @@ function StatCard({ title, value, hint, icon: Icon }: StatCardProps) {
 }
 
 export async function DashboardPanel() {
-  const [sessions, commits, staging] = await Promise.all([
+  const [sessions, commits, staging, operationLogs] = await Promise.all([
     listSessions(),
     listWalletCommits(),
-    readStagingDraft()
+    readStagingDraft(),
+    listWalletOperationLogs(8)
   ]);
 
   const latestCommit = commits[0];
@@ -89,6 +90,37 @@ export async function DashboardPanel() {
             initialStagingFiles={staging.files}
             initialLatestHash={latestCommit?.hash}
           />
+
+          <div className="space-y-2 border-t pt-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Recent Operation Logs</p>
+            {operationLogs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">暂无 Wallet 操作日志。</p>
+            ) : (
+              <div className="space-y-2">
+                {operationLogs.map((log, index) => (
+                  <div
+                    key={`${log.createdAt}-${index}`}
+                    className="rounded-lg border bg-background/70 p-3"
+                  >
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <Badge variant="outline">{log.action}</Badge>
+                      <Badge
+                        variant={log.status === "success" ? "secondary" : "outline"}
+                        className={log.status === "error" ? "border-destructive text-destructive" : undefined}
+                      >
+                        {log.status}
+                      </Badge>
+                      {log.hash ? <span className="text-xs text-muted-foreground">{log.hash}</span> : null}
+                    </div>
+                    <p className="text-sm">{log.message}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {new Date(log.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </section>

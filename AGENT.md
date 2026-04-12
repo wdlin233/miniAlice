@@ -58,6 +58,7 @@ data/
 - [ ] Week 1: Chat 面板 + /api/analysis + Session JSONL 落盘
 - [ ] Week 1: Wallet add/commit/push API 骨架
 - [ ] Week 1: Dashboard 接入 Wallet add/commit/push 操作面板
+- [ ] Week 1: Dashboard 展示 Wallet add/commit/push 操作结果日志
 - [ ] Week 2: Session 自动压缩策略
 - [ ] Week 2: Sandbox playheadTime 时间隔离
 - [ ] Week 3: Browser Tool 接入行情与资讯

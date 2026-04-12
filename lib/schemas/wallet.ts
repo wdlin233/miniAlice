@@ -32,4 +32,16 @@ export const walletCommitSchema = z.object({
   pushedAt: z.string().optional()
 });
 
+export const walletOperationStatusSchema = z.enum(["success", "error"]);
+
+export const walletOperationLogSchema = z.object({
+  action: walletActionSchema,
+  status: walletOperationStatusSchema,
+  message: z.string(),
+  createdAt: z.string(),
+  hash: walletHashSchema.optional(),
+  summary: z.string().optional(),
+  filesCount: z.number().int().nonnegative().optional()
+});
+
 export type WalletAction = z.infer<typeof walletActionSchema>;
