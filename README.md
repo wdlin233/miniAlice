@@ -23,6 +23,14 @@ pnpm lint
 pnpm type-check
 ```
 
+## E2E 测试
+```bash
+pnpm test:e2e:install
+pnpm test:e2e
+```
+
+更多发布流程与检查项见 [RELEASE.md](RELEASE.md)。
+
 ## 声明
 
 本项目为课程大作业，参考并大幅简化了 [OpenAlice](https://github.com/TraderAlice/OpenAlice) 的核心设计理念，包括：

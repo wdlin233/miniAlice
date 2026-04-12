@@ -70,4 +70,4 @@ data/
 - [x] Week 4: Trading Tool 下单/撤单 API（tool=trading）
 - [x] Week 4: Trading Tool 仓位建议策略 + Wallet push 执行联动
 - [x] Week 4: Sandbox 回放模式接入 Trading 风控验证
-- [ ] Week 4: E2E 测试 + 发布文档
+- [x] Week 4: E2E 测试 + 发布文档

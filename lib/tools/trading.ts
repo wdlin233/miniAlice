@@ -60,7 +60,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "leverage_limit",
         label: "Leverage Limit",
-        status: tradingRuleStatusSchema.Enum.fail,
+        status: tradingRuleStatusSchema.enum.fail,
         message: `Leverage ${request.leverage}x exceeds max ${config.maxLeverage}x.`
       },
       recommendation: "降低杠杆，优先控制在策略上限内。"
@@ -70,7 +70,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "leverage_limit",
         label: "Leverage Limit",
-        status: tradingRuleStatusSchema.Enum.warn,
+        status: tradingRuleStatusSchema.enum.warn,
         message: `Leverage ${request.leverage}x is near max ${config.maxLeverage}x.`
       },
       recommendation: "当前杠杆接近上限，建议下调或缩小名义仓位。"
@@ -80,7 +80,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "leverage_limit",
         label: "Leverage Limit",
-        status: tradingRuleStatusSchema.Enum.pass,
+        status: tradingRuleStatusSchema.enum.pass,
         message: `Leverage ${request.leverage}x is within limit.`
       }
     });
@@ -91,7 +91,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "notional_limit",
         label: "Notional Limit",
-        status: tradingRuleStatusSchema.Enum.fail,
+        status: tradingRuleStatusSchema.enum.fail,
         message: `Notional $${round2(request.notionalUsd)} exceeds max $${round2(config.maxNotionalPerTradeUsd)}.`
       },
       recommendation: "拆分下单或减少单笔仓位规模。"
@@ -101,7 +101,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "notional_limit",
         label: "Notional Limit",
-        status: tradingRuleStatusSchema.Enum.pass,
+        status: tradingRuleStatusSchema.enum.pass,
         message: `Notional $${round2(request.notionalUsd)} is within limit.`
       }
     });
@@ -112,7 +112,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "risk_per_trade",
         label: "Risk Per Trade",
-        status: tradingRuleStatusSchema.Enum.fail,
+        status: tradingRuleStatusSchema.enum.fail,
         message: `Risk ${round2(metrics.riskPerTradePercent)}% exceeds max ${config.maxRiskPerTradePercent}%.`
       },
       recommendation: "扩大止损距离或降低仓位，确保单笔风险在阈值内。"
@@ -122,7 +122,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "risk_per_trade",
         label: "Risk Per Trade",
-        status: tradingRuleStatusSchema.Enum.warn,
+        status: tradingRuleStatusSchema.enum.warn,
         message: `Risk ${round2(metrics.riskPerTradePercent)}% is close to max ${config.maxRiskPerTradePercent}%.`
       },
       recommendation: "建议进一步收敛仓位风险，避免波动放大损失。"
@@ -132,7 +132,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "risk_per_trade",
         label: "Risk Per Trade",
-        status: tradingRuleStatusSchema.Enum.pass,
+        status: tradingRuleStatusSchema.enum.pass,
         message: `Risk ${round2(metrics.riskPerTradePercent)}% is acceptable.`
       }
     });
@@ -143,7 +143,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "daily_loss_limit",
         label: "Daily Loss Limit",
-        status: tradingRuleStatusSchema.Enum.fail,
+        status: tradingRuleStatusSchema.enum.fail,
         message: `Daily loss ${request.dailyLossPercent}% exceeds max ${config.maxDailyLossPercent}%.`
       },
       recommendation: "触发日损上限，建议暂停新增交易并复盘。"
@@ -153,7 +153,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "daily_loss_limit",
         label: "Daily Loss Limit",
-        status: tradingRuleStatusSchema.Enum.pass,
+        status: tradingRuleStatusSchema.enum.pass,
         message: `Daily loss ${request.dailyLossPercent}% is within limit.`
       }
     });
@@ -164,7 +164,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "exposure_limit",
         label: "Total Exposure",
-        status: tradingRuleStatusSchema.Enum.fail,
+        status: tradingRuleStatusSchema.enum.fail,
         message: `Resulting exposure ${round2(metrics.resultingExposurePercent)}% exceeds max ${config.maxTotalExposurePercent}%.`
       },
       recommendation: "降低新增仓位或减仓后再执行该计划。"
@@ -174,7 +174,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "exposure_limit",
         label: "Total Exposure",
-        status: tradingRuleStatusSchema.Enum.pass,
+        status: tradingRuleStatusSchema.enum.pass,
         message: `Resulting exposure ${round2(metrics.resultingExposurePercent)}% is within limit.`
       }
     });
@@ -185,7 +185,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "stop_loss_discipline",
         label: "Stop-loss Discipline",
-        status: tradingRuleStatusSchema.Enum.fail,
+        status: tradingRuleStatusSchema.enum.fail,
         message: `Stop-loss ${request.stopLossPercent}% is below minimum ${config.minStopLossPercent}%.`
       },
       recommendation: "补充有效止损，避免无保护敞口。"
@@ -195,7 +195,7 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
       rule: {
         id: "stop_loss_discipline",
         label: "Stop-loss Discipline",
-        status: tradingRuleStatusSchema.Enum.pass,
+        status: tradingRuleStatusSchema.enum.pass,
         message: `Stop-loss ${request.stopLossPercent}% passes minimum requirement.`
       }
     });
@@ -224,8 +224,8 @@ export async function evaluateTradingRisk(input: TradingRiskRequest): Promise<Tr
   const ruleEvaluations = evaluateRuleSet(context);
   const rules = ruleEvaluations.map((item) => item.rule);
 
-  const failCount = rules.filter((rule) => rule.status === tradingRuleStatusSchema.Enum.fail).length;
-  const warnCount = rules.filter((rule) => rule.status === tradingRuleStatusSchema.Enum.warn).length;
+  const failCount = rules.filter((rule) => rule.status === tradingRuleStatusSchema.enum.fail).length;
+  const warnCount = rules.filter((rule) => rule.status === tradingRuleStatusSchema.enum.warn).length;
 
   const decision = failCount > 0 ? "reject" : warnCount > 0 ? "caution" : "approve";
   const score = Math.max(0, 100 - failCount * 22 - warnCount * 7);
