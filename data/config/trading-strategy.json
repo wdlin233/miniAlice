@@ -1,0 +1,9 @@
+{
+  "minNotionalUsd": 200,
+  "maxNotionalUsd": 2000,
+  "rewardRiskRatio": 1.8,
+  "maxRecommendedLeverage": 5,
+  "baseStopLossPercent": 1,
+  "defaultAccountEquityUsd": 10000,
+  "policyVersion": "strategy-v1"
+}

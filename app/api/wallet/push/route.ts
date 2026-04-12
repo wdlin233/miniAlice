@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 
 import { walletPushInputSchema } from "@/lib/schemas/wallet";
 import { pushCommit } from "@/lib/storage/wallet";
+import { linkWalletPushExecutionSafe } from "@/lib/tools/wallet-trading-link";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,8 +36,9 @@ export async function POST(request: Request) {
   try {
     const body = walletPushInputSchema.parse(await request.json());
     const commit = await pushCommit(body.hash);
+    const trading = await linkWalletPushExecutionSafe(commit);
 
-    return NextResponse.json({ action: "push", commit });
+    return NextResponse.json({ action: "push", commit, trading });
   } catch (error) {
     return responseByError(error);
   }
