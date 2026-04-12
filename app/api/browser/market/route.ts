@@ -22,9 +22,26 @@ function errorResponse(error: unknown) {
   return NextResponse.json({ error: message }, { status: 500 });
 }
 
-export async function GET() {
+function parseGetInput(request: Request) {
+  const url = new URL(request.url);
+  const symbols = url.searchParams.get("symbols");
+
+  const rawInput = {
+    symbols: symbols
+      ? symbols
+          .split(",")
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0)
+      : undefined
+  };
+
+  return browserMarketRequestSchema.parse(rawInput);
+}
+
+export async function GET(request: Request) {
   try {
-    const snapshot = await fetchMarketSnapshot();
+    const input = parseGetInput(request);
+    const snapshot = await fetchMarketSnapshot(input);
     return NextResponse.json(snapshot);
   } catch (error) {
     return errorResponse(error);

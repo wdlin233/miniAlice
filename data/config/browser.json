@@ -2,5 +2,9 @@
   "defaultSymbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
   "newsLimit": 5,
   "marketEndpoint": "https://api.binance.com/api/v3/ticker/24hr",
-  "newsEndpoint": "https://min-api.cryptocompare.com/data/v2/news/?lang=EN"
+  "defaultNewsSource": "cryptocompare",
+  "newsEndpoints": {
+    "cryptocompare": "https://min-api.cryptocompare.com/data/v2/news/?lang=EN",
+    "reddit": "https://www.reddit.com/r/CryptoCurrency/new.json"
+  }
 }

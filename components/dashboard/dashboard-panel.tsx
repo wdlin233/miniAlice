@@ -1,5 +1,6 @@
 import { Clock3, FileText, GitCommitHorizontal, WalletCards, type LucideIcon } from "lucide-react";
 
+import { BrowserPanel } from "@/components/dashboard/browser-panel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WalletControls } from "@/components/dashboard/wallet-controls";
@@ -34,7 +35,7 @@ export async function DashboardPanel() {
     readStagingDraft(),
     listWalletOperationLogs(8),
     fetchMarketSnapshot().catch(() => null),
-    fetchNewsSnapshot({ limit: 4 }).catch(() => null)
+    fetchNewsSnapshot({ limit: 4, source: "cryptocompare" }).catch(() => null)
   ]);
 
   const latestCommit = commits[0];
@@ -132,59 +133,8 @@ export async function DashboardPanel() {
           <CardTitle className="text-base">Browser Tool</CardTitle>
           <CardDescription>行情抓取 + 资讯抓取（tool=browser）</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Market Snapshot</p>
-            {marketSnapshot && marketSnapshot.quotes.length > 0 ? (
-              <div className="space-y-2">
-                {marketSnapshot.quotes.map((quote) => (
-                  <div key={quote.symbol} className="rounded-lg border bg-background/70 p-3">
-                    <div className="mb-1 flex items-center justify-between gap-2">
-                      <Badge variant="outline">{quote.symbol}</Badge>
-                      <span
-                        className={`text-xs font-semibold ${quote.changePercent24h >= 0 ? "text-emerald-600" : "text-rose-600"}`}
-                      >
-                        {quote.changePercent24h.toFixed(2)}%
-                      </span>
-                    </div>
-                    <p className="text-sm">Price: {quote.price.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      H/L: {quote.high24h.toFixed(2)} / {quote.low24h.toFixed(2)}
-                    </p>
-                  </div>
-                ))}
-                {marketSnapshot.errors.length > 0 ? (
-                  <p className="text-xs text-muted-foreground">部分行情源失败：{marketSnapshot.errors.join("; ")}</p>
-                ) : null}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">暂无可用行情数据。</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">News Feed</p>
-            {newsSnapshot && newsSnapshot.items.length > 0 ? (
-              <div className="space-y-2">
-                {newsSnapshot.items.map((item) => (
-                  <a
-                    key={`${item.url}-${item.publishedAt}`}
-                    href={item.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block rounded-lg border bg-background/70 p-3 transition hover:bg-background"
-                  >
-                    <p className="text-sm font-medium leading-5">{item.title}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {item.source} · {new Date(item.publishedAt).toLocaleString()}
-                    </p>
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">暂无可用资讯数据。</p>
-            )}
-          </div>
+        <CardContent>
+          <BrowserPanel initialMarketSnapshot={marketSnapshot} initialNewsSnapshot={newsSnapshot} />
         </CardContent>
       </Card>
     </section>

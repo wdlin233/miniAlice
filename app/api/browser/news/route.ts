@@ -22,9 +22,21 @@ function errorResponse(error: unknown) {
   return NextResponse.json({ error: message }, { status: 500 });
 }
 
-export async function GET() {
+function parseGetInput(request: Request) {
+  const url = new URL(request.url);
+  const source = url.searchParams.get("source");
+  const limit = url.searchParams.get("limit");
+
+  return browserNewsRequestSchema.parse({
+    source: source ?? undefined,
+    limit: limit ? Number(limit) : undefined
+  });
+}
+
+export async function GET(request: Request) {
   try {
-    const snapshot = await fetchNewsSnapshot();
+    const input = parseGetInput(request);
+    const snapshot = await fetchNewsSnapshot(input);
     return NextResponse.json(snapshot);
   } catch (error) {
     return errorResponse(error);

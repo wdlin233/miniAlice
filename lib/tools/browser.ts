@@ -1,10 +1,16 @@
 import {
+  browserCombinedSnapshotSchema,
+  browserRefreshRequestSchema,
   browserMarketRequestSchema,
   browserMarketQuoteSchema,
   browserMarketSnapshotSchema,
+  browserNewsSourceSchema,
   browserNewsRequestSchema,
   browserNewsItemSchema,
   browserNewsSnapshotSchema,
+  type BrowserCombinedSnapshot,
+  type BrowserNewsSource,
+  type BrowserRefreshRequest,
   type BrowserMarketRequest,
   type BrowserNewsRequest,
   type BrowserMarketQuote,
@@ -36,6 +42,21 @@ interface CryptoCompareNewsResponse {
   }>;
 }
 
+interface RedditNewsResponse {
+  data?: {
+    children?: Array<{
+      data?: {
+        title?: string;
+        url_overridden_by_dest?: string;
+        permalink?: string;
+        selftext?: string;
+        created_utc?: number;
+        subreddit_name_prefixed?: string;
+      };
+    }>;
+  };
+}
+
 function normalizeSymbol(symbol: string): string {
   return symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
@@ -43,6 +64,10 @@ function normalizeSymbol(symbol: string): string {
 function safeNumber(input: string | undefined): number {
   const value = Number(input);
   return Number.isFinite(value) ? value : 0;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "unknown error";
 }
 
 async function fetchQuoteBySymbol(symbol: string, marketEndpoint: string): Promise<BrowserMarketQuote> {
@@ -101,12 +126,8 @@ export async function fetchMarketSnapshot(input?: BrowserMarketRequest): Promise
   });
 }
 
-export async function fetchNewsSnapshot(input?: BrowserNewsRequest): Promise<BrowserNewsSnapshot> {
-  const config = await readBrowserConfig();
-  const validatedInput = browserNewsRequestSchema.parse(input ?? {});
-  const limit = validatedInput.limit ?? config.newsLimit;
-
-  const response = await fetch(config.newsEndpoint, {
+async function fetchCryptoCompareNews(endpoint: string, limit: number): Promise<BrowserNewsItem[]> {
+  const response = await fetch(endpoint, {
     method: "GET",
     cache: "no-store"
   });
@@ -118,23 +139,109 @@ export async function fetchNewsSnapshot(input?: BrowserNewsRequest): Promise<Bro
   const payload = (await response.json()) as CryptoCompareNewsResponse;
   const rows = Array.isArray(payload.Data) ? payload.Data : [];
 
-  const items: BrowserNewsItem[] = rows
+  return rows
     .slice(0, limit)
     .flatMap((row) => {
       const parsed = browserNewsItemSchema.safeParse({
         title: row.title,
         url: row.url,
-        source: row.source_info?.name ?? row.source ?? "Unknown",
+        source: row.source_info?.name ?? row.source ?? "CryptoCompare",
         publishedAt: new Date((row.published_on ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
         summary: row.body?.slice(0, 180)
       });
 
       return parsed.success ? [parsed.data] : [];
     });
+}
+
+async function fetchRedditNews(endpoint: string, limit: number): Promise<BrowserNewsItem[]> {
+  const url = new URL(endpoint);
+  url.searchParams.set("limit", String(limit));
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    cache: "no-store",
+    headers: {
+      "User-Agent": "MiniAlice/1.0"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`reddit endpoint returned ${response.status}`);
+  }
+
+  const payload = (await response.json()) as RedditNewsResponse;
+  const rows = Array.isArray(payload.data?.children) ? payload.data.children : [];
+
+  return rows
+    .slice(0, limit)
+    .flatMap((row) => {
+      const post = row.data;
+      const parsed = browserNewsItemSchema.safeParse({
+        title: post?.title,
+        url: post?.url_overridden_by_dest ?? (post?.permalink ? `https://www.reddit.com${post.permalink}` : undefined),
+        source: post?.subreddit_name_prefixed ?? "Reddit",
+        publishedAt: new Date((post?.created_utc ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+        summary: post?.selftext?.slice(0, 180)
+      });
+
+      return parsed.success ? [parsed.data] : [];
+    });
+}
+
+export async function fetchNewsSnapshot(input?: BrowserNewsRequest): Promise<BrowserNewsSnapshot> {
+  const config = await readBrowserConfig();
+  const validatedInput = browserNewsRequestSchema.parse(input ?? {});
+  const limit = validatedInput.limit ?? config.newsLimit;
+
+  const source: BrowserNewsSource = validatedInput.source ?? config.defaultNewsSource;
+  const endpoint = config.newsEndpoints[source];
+  const errors: string[] = [];
+
+  if (!endpoint) {
+    return browserNewsSnapshotSchema.parse({
+      tool: "browser",
+      source,
+      items: [],
+      errors: [`Missing endpoint configuration for ${source}.`],
+      fetchedAt: new Date().toISOString()
+    });
+  }
+
+  let items: BrowserNewsItem[] = [];
+
+  try {
+    const parsedSource = browserNewsSourceSchema.parse(source);
+    if (parsedSource === "reddit") {
+      items = await fetchRedditNews(endpoint, limit);
+    } else {
+      items = await fetchCryptoCompareNews(endpoint, limit);
+    }
+  } catch (error) {
+    errors.push(getErrorMessage(error));
+  }
 
   return browserNewsSnapshotSchema.parse({
     tool: "browser",
+    source,
     items,
+    errors,
     fetchedAt: new Date().toISOString()
+  });
+}
+
+export async function fetchBrowserSnapshot(input?: BrowserRefreshRequest): Promise<BrowserCombinedSnapshot> {
+  const validatedInput = browserRefreshRequestSchema.parse(input ?? {});
+
+  const [market, news] = await Promise.all([
+    fetchMarketSnapshot({ symbols: validatedInput.symbols }),
+    fetchNewsSnapshot({ source: validatedInput.source, limit: validatedInput.limit })
+  ]);
+
+  return browserCombinedSnapshotSchema.parse({
+    tool: "browser",
+    market,
+    news,
+    refreshedAt: new Date().toISOString()
   });
 }
