@@ -1,9 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CurrentTradingBoard } from "@/components/dashboard/current-trading-board";
 import { StrategyStudio } from "@/components/dashboard/strategy-studio";
+import { PaperTradingPanel } from "@/components/trading/paper-trading-panel";
 import { RiskControlPanel } from "@/components/trading/risk-control-panel";
 import { SandboxReplayPanel } from "@/components/trading/sandbox-replay-panel";
-import { CandlestickChart, WalletCards, GitCommitHorizontal, TrendingUp } from "lucide-react";
 
 export default function TradingPage() {
   return (
@@ -15,71 +15,15 @@ export default function TradingPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
-          <CardHeader>
-            <CardTitle className="text-base">钱包余额</CardTitle>
-            <CardDescription>当前钱包余额</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-semibold">$10,000.00</p>
-                <p className="mt-1 text-xs text-red-500">今日 +2.5%</p>
-              </div>
-              <WalletCards className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
-          <CardHeader>
-            <CardTitle className="text-base">当前仓位</CardTitle>
-            <CardDescription>活跃持仓</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-semibold">5</p>
-                <p className="mt-1 text-xs text-muted-foreground">BTC, ETH, SOL, ADA, DOGE</p>
-              </div>
-              <CandlestickChart className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
-          <CardHeader>
-            <CardTitle className="text-base">今日交易</CardTitle>
-            <CardDescription>今日交易次数</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-semibold">12</p>
-                <p className="mt-1 text-xs text-muted-foreground">7 买 5 卖</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
-          <CardHeader>
-            <CardTitle className="text-base">今日收益</CardTitle>
-            <CardDescription>今日盈亏</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-semibold text-red-500">+$250.00</p>
-                <p className="mt-1 text-xs text-red-500">+2.5%</p>
-              </div>
-              <GitCommitHorizontal className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
+        <CardHeader>
+          <CardTitle>模拟盘交易</CardTitle>
+          <CardDescription>价格优先读取真实行情，支持买入/卖出并实时更新资金与持仓。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PaperTradingPanel />
+        </CardContent>
+      </Card>
 
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader>
