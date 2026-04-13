@@ -27,6 +27,10 @@ export const browserRefreshRequestSchema = z.object({
 export const browserConfigSchema = z.object({
   defaultSymbols: z.array(browserSymbolSchema).min(1).max(10).default(["BTCUSDT", "ETHUSDT"]),
   newsLimit: z.number().int().min(1).max(20).default(5),
+  requestTimeoutMs: z.number().int().min(500).max(15000).default(2500),
+  marketCacheTtlMs: z.number().int().min(1000).max(120000).default(15000),
+  newsCacheTtlMs: z.number().int().min(1000).max(120000).default(20000),
+  combinedCacheTtlMs: z.number().int().min(1000).max(120000).default(10000),
   marketEndpoint: z.string().url().default("https://api.binance.com/api/v3/ticker/24hr"),
   defaultNewsSource: browserNewsSourceSchema.default("cryptocompare"),
   newsEndpoints: z

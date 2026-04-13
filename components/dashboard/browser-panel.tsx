@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, RefreshCcw } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,56 @@ export function BrowserPanel({ initialMarketSnapshot, initialNewsSnapshot }: Bro
   const [newsSource, setNewsSource] = useState<BrowserNewsSource>(initialNewsSnapshot?.source ?? "cryptocompare");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialMarketSnapshot || initialNewsSnapshot) {
+      return;
+    }
+
+    let mounted = true;
+
+    async function bootstrapSnapshot() {
+      setIsRefreshing(true);
+
+      try {
+        const response = await fetch("/api/browser/refresh", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ source: "cryptocompare", limit: 4 })
+        });
+
+        if (!response.ok) {
+          const errorData = (await response.json()) as BrowserRefreshError;
+          throw new Error(errorData.error ?? "Browser bootstrap refresh failed.");
+        }
+
+        const data = (await response.json()) as BrowserCombinedSnapshot;
+
+        if (!mounted) {
+          return;
+        }
+
+        setMarketSnapshot(data.market);
+        setNewsSnapshot(data.news);
+      } catch (error) {
+        if (mounted) {
+          setNotice(`初始化抓取失败：${getErrorMessage(error)}`);
+        }
+      } finally {
+        if (mounted) {
+          setIsRefreshing(false);
+        }
+      }
+    }
+
+    void bootstrapSnapshot();
+
+    return () => {
+      mounted = false;
+    };
+  }, [initialMarketSnapshot, initialNewsSnapshot]);
 
   async function refreshBrowserSnapshot() {
     setIsRefreshing(true);

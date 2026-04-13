@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WalletControls } from "@/components/dashboard/wallet-controls";
 import { listSessions } from "@/lib/storage/sessions";
-import { fetchMarketSnapshot, fetchNewsSnapshot } from "@/lib/tools/browser";
 import { listWalletCommits, listWalletOperationLogs, readStagingDraft } from "@/lib/storage/wallet";
 
 interface StatCardProps {
@@ -29,13 +28,11 @@ function StatCard({ title, value, hint, icon: Icon }: StatCardProps) {
 }
 
 export async function DashboardPanel() {
-  const [sessions, commits, staging, operationLogs, marketSnapshot, newsSnapshot] = await Promise.all([
+  const [sessions, commits, staging, operationLogs] = await Promise.all([
     listSessions(),
     listWalletCommits(),
     readStagingDraft(),
-    listWalletOperationLogs(8),
-    fetchMarketSnapshot().catch(() => null),
-    fetchNewsSnapshot({ limit: 4, source: "cryptocompare" }).catch(() => null)
+    listWalletOperationLogs(8)
   ]);
 
   const latestCommit = commits[0];
@@ -131,10 +128,10 @@ export async function DashboardPanel() {
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Browser Tool</CardTitle>
-          <CardDescription>行情抓取 + 资讯抓取（tool=browser）</CardDescription>
+          <CardDescription>客户端异步抓取行情与资讯，避免阻塞 Dashboard 首屏</CardDescription>
         </CardHeader>
         <CardContent>
-          <BrowserPanel initialMarketSnapshot={marketSnapshot} initialNewsSnapshot={newsSnapshot} />
+          <BrowserPanel initialMarketSnapshot={null} initialNewsSnapshot={null} />
         </CardContent>
       </Card>
     </section>
