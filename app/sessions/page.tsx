@@ -9,7 +9,7 @@ export default async function SessionsPage() {
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="animate-fade-in-up">
-        <h1 className="text-3xl font-bold tracking-tight">Session Management</h1>
+        <h1 className="text-3xl font-bold tracking-tight">会话管理</h1>
         <p className="mt-2 text-muted-foreground">
           会话文件管理与历史记录
         </p>

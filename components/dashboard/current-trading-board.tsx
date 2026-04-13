@@ -48,6 +48,62 @@ function formatUsd(value: number): string {
   return `$${value.toFixed(2)}`;
 }
 
+function riskDecisionLabel(decision: string): string {
+  if (decision === "approve") {
+    return "通过";
+  }
+
+  if (decision === "caution") {
+    return "谨慎";
+  }
+
+  if (decision === "block") {
+    return "拦截";
+  }
+
+  return decision;
+}
+
+function executionStatusLabel(status: string): string {
+  if (status === "submitted") {
+    return "已提交";
+  }
+
+  if (status === "blocked") {
+    return "已拦截";
+  }
+
+  if (status === "failed") {
+    return "失败";
+  }
+
+  if (status === "canceled") {
+    return "已取消";
+  }
+
+  return status;
+}
+
+function sideLabel(side: string): string {
+  if (side === "long") {
+    return "做多";
+  }
+
+  if (side === "short") {
+    return "做空";
+  }
+
+  if (side === "buy") {
+    return "买入";
+  }
+
+  if (side === "sell") {
+    return "卖出";
+  }
+
+  return side;
+}
+
 export async function CurrentTradingBoard() {
   const [orders, executions] = await Promise.all([
     listTradingOrders({ limit: 80 }),
@@ -66,21 +122,21 @@ export async function CurrentTradingBoard() {
 
       <CardContent className="space-y-5">
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline">Active Symbols: {positions.length}</Badge>
-          <Badge variant="outline">Open Orders: {orders.filter((order) => order.status === "submitted").length}</Badge>
-          <Badge variant="outline">Exposure: {formatUsd(totalExposure)}</Badge>
+          <Badge variant="outline">活跃交易对：{positions.length}</Badge>
+          <Badge variant="outline">未平订单：{orders.filter((order) => order.status === "submitted").length}</Badge>
+          <Badge variant="outline">总敞口：{formatUsd(totalExposure)}</Badge>
         </div>
 
         <div className="overflow-x-auto rounded-md border">
           <table className="w-full min-w-[720px] text-sm">
             <thead className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-3 py-2 text-left">Symbol</th>
-                <th className="px-3 py-2 text-left">Orders</th>
-                <th className="px-3 py-2 text-left">Exposure</th>
-                <th className="px-3 py-2 text-left">Avg Leverage</th>
-                <th className="px-3 py-2 text-left">Risk</th>
-                <th className="px-3 py-2 text-left">Source</th>
+                <th className="px-3 py-2 text-left">交易对</th>
+                <th className="px-3 py-2 text-left">订单数</th>
+                <th className="px-3 py-2 text-left">敞口</th>
+                <th className="px-3 py-2 text-left">平均杠杆</th>
+                <th className="px-3 py-2 text-left">风控结论</th>
+                <th className="px-3 py-2 text-left">来源</th>
               </tr>
             </thead>
             <tbody>
@@ -107,7 +163,7 @@ export async function CurrentTradingBoard() {
                               : "text-destructive"
                         }
                       >
-                        {row.lastRiskDecision}
+                        {riskDecisionLabel(row.lastRiskDecision)}
                       </span>
                     </td>
                     <td className="px-3 py-2">{row.source}</td>
@@ -119,7 +175,7 @@ export async function CurrentTradingBoard() {
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Recent Trades</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">最近交易执行</p>
 
           {executions.length === 0 ? (
             <p className="text-sm text-muted-foreground">暂无交易执行记录。</p>
@@ -129,7 +185,7 @@ export async function CurrentTradingBoard() {
                 <div key={item.id} className="rounded-lg border bg-background/70 p-3">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
                     <Badge variant="outline">{item.symbol}</Badge>
-                    <Badge variant="outline">{item.side.toUpperCase()}</Badge>
+                    <Badge variant="outline">{sideLabel(item.side)}</Badge>
                     <Badge
                       variant="outline"
                       className={
@@ -140,7 +196,7 @@ export async function CurrentTradingBoard() {
                             : "border-destructive text-destructive"
                       }
                     >
-                      {item.status}
+                      {executionStatusLabel(item.status)}
                     </Badge>
                   </div>
 

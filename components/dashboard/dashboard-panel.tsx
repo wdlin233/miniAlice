@@ -45,31 +45,31 @@ export async function DashboardPanel() {
     <section className="grid gap-4 animate-fade-in-up">
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader>
-          <CardTitle className="text-xl">Portfolio Overview</CardTitle>
+          <CardTitle className="text-xl">投资组合总览</CardTitle>
           <CardDescription>面向交易行为展示，不暴露底层执行细节。</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            title="AI Sessions"
+            title="AI 会话数"
             value={String(sessions.length)}
             hint="策略讨论与历史上下文"
             icon={Activity}
           />
           <StatCard
-            title="Active Orders"
+            title="活跃订单"
             value={String(activeOrders.length)}
-            hint="当前处于 submitted 的订单"
+            hint="当前处于已提交状态的订单"
             icon={TrendingUp}
           />
           <StatCard
-            title="Portfolio Exposure"
+            title="组合敞口"
             value={`$${totalExposure.toFixed(2)}`}
             hint="按 notional 汇总的风险敞口"
             icon={TrendingUp}
           />
           <StatCard
-            title="Latest Execution"
-            value={latestExecution?.symbol ?? "N/A"}
+            title="最新执行"
+            value={latestExecution?.symbol ?? "暂无"}
             hint={latestExecution?.createdAt ?? (commits[0]?.createdAt ?? "暂无执行记录")}
             icon={Clock3}
           />
@@ -78,7 +78,7 @@ export async function DashboardPanel() {
 
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Strategy Studio</CardTitle>
+          <CardTitle className="text-base">策略执行</CardTitle>
           <CardDescription>输入策略想法，系统自动完成策略记录与执行流水。</CardDescription>
         </CardHeader>
         <CardContent>
@@ -90,8 +90,8 @@ export async function DashboardPanel() {
 
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Browser Tool</CardTitle>
-          <CardDescription>客户端异步抓取行情与资讯，避免阻塞 Dashboard 首屏</CardDescription>
+          <CardTitle className="text-base">市场浏览器</CardTitle>
+          <CardDescription>客户端异步抓取行情与资讯，避免阻塞首页首屏</CardDescription>
         </CardHeader>
         <CardContent>
           <BrowserPanel initialMarketSnapshot={null} initialNewsSnapshot={null} />

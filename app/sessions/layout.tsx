@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Sessions - MiniAlice",
-  description: "File-driven AI trading agent session management"
+  title: "会话管理 - MiniAlice",
+  description: "文件驱动 AI 交易代理会话管理"
 };
 
 export default function SessionsLayout({ children }: { children: ReactNode }) {

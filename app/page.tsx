@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="animate-fade-in-up">
-        <h1 className="text-3xl font-bold tracking-tight">MiniAlice Strategy Hub</h1>
+        <h1 className="text-3xl font-bold tracking-tight">MiniAlice 策略中心</h1>
         <p className="mt-2 text-muted-foreground">
           先和 AI 讨论策略，再直接查看当前交易看板。
         </p>
@@ -16,7 +16,7 @@ export default function HomePage() {
       <div className="grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
         <div className="animate-fade-in-up">
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Chat</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">智能对话</p>
             <ChatPanel />
           </div>
         </div>

@@ -20,6 +20,26 @@ const riskLevelOptions: Array<{ value: TradingRiskLevel; label: string }> = [
   { value: "high", label: "高风险" }
 ];
 
+function sideLabel(side: TradingExecuteResult["recommendation"]["side"]): string {
+  return side === "buy" ? "买入" : "卖出";
+}
+
+function executionStatusLabel(status: TradingExecuteResult["execution"]["status"]): string {
+  if (status === "submitted") {
+    return "已提交";
+  }
+
+  if (status === "blocked") {
+    return "已拦截";
+  }
+
+  if (status === "error") {
+    return "异常";
+  }
+
+  return status;
+}
+
 export function StrategyStudio() {
   const router = useRouter();
 
@@ -62,7 +82,7 @@ export function StrategyStudio() {
       setNotice("策略已执行：系统已自动完成记录与交易流水。请查看下方执行结果。\n");
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown strategy execution error.";
+      const message = error instanceof Error ? error.message : "策略执行出现未知错误。";
       setNotice(`执行失败：${message}`);
     } finally {
       setIsSubmitting(false);
@@ -75,7 +95,7 @@ export function StrategyStudio() {
         <Input
           value={symbol}
           onChange={(event) => setSymbol(event.target.value)}
-          placeholder="Symbol，例如 BTCUSDT"
+          placeholder="交易对，例如 BTCUSDT"
           disabled={isSubmitting}
         />
 
@@ -117,10 +137,10 @@ export function StrategyStudio() {
           <p className="text-sm font-medium">执行摘要</p>
           <p className="text-sm text-muted-foreground">{result.summary}</p>
           <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <span>Direction: {result.recommendation.side.toUpperCase()}</span>
-            <span>Leverage: {result.recommendation.leverage}x</span>
-            <span>Notional: ${result.recommendation.notionalUsd.toFixed(2)}</span>
-            <span>Execution: {result.execution.status}</span>
+            <span>方向：{sideLabel(result.recommendation.side)}</span>
+            <span>杠杆：{result.recommendation.leverage}x</span>
+            <span>名义金额：${result.recommendation.notionalUsd.toFixed(2)}</span>
+            <span>执行状态：{executionStatusLabel(result.execution.status)}</span>
           </div>
         </div>
       ) : null}

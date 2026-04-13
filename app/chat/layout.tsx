@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Chat - MiniAlice",
-  description: "File-driven AI trading agent chat interface"
+  title: "智能对话 - MiniAlice",
+  description: "文件驱动 AI 交易代理对话界面"
 };
 
 export default function ChatLayout({ children }: { children: ReactNode }) {

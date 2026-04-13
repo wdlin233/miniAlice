@@ -9,7 +9,7 @@ export default function TradingPage() {
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="animate-fade-in-up">
-        <h1 className="text-3xl font-bold tracking-tight">Trading Management</h1>
+        <h1 className="text-3xl font-bold tracking-tight">交易管理</h1>
         <p className="mt-2 text-muted-foreground">
           从策略输入到执行验证的全链路视图
         </p>
@@ -18,14 +18,14 @@ export default function TradingPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
           <CardHeader>
-            <CardTitle className="text-base">Wallet Balance</CardTitle>
+            <CardTitle className="text-base">钱包余额</CardTitle>
             <CardDescription>当前钱包余额</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-2xl font-semibold">$10,000.00</p>
-                <p className="mt-1 text-xs text-green-500">+2.5% today</p>
+                <p className="mt-1 text-xs text-red-500">今日 +2.5%</p>
               </div>
               <WalletCards className="h-8 w-8 text-primary" />
             </div>
@@ -34,7 +34,7 @@ export default function TradingPage() {
 
         <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
           <CardHeader>
-            <CardTitle className="text-base">Active Positions</CardTitle>
+            <CardTitle className="text-base">当前仓位</CardTitle>
             <CardDescription>活跃持仓</CardDescription>
           </CardHeader>
           <CardContent>
@@ -72,8 +72,8 @@ export default function TradingPage() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-semibold text-green-500">+$250.00</p>
-                <p className="mt-1 text-xs text-muted-foreground">+2.5%</p>
+                <p className="text-2xl font-semibold text-red-500">+$250.00</p>
+                <p className="mt-1 text-xs text-red-500">+2.5%</p>
               </div>
               <GitCommitHorizontal className="h-8 w-8 text-primary" />
             </div>
@@ -95,8 +95,8 @@ export default function TradingPage() {
 
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader>
-          <CardTitle>Trading Tool 风险控制策略</CardTitle>
-          <CardDescription>对下单意图执行规则化风险评估（tool=trading）</CardDescription>
+          <CardTitle>交易工具风控策略</CardTitle>
+          <CardDescription>对下单意图执行规则化风险评估（交易工具）</CardDescription>
         </CardHeader>
         <CardContent>
           <RiskControlPanel />
@@ -105,8 +105,8 @@ export default function TradingPage() {
 
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader>
-          <CardTitle>Sandbox 回放风控验证</CardTitle>
-          <CardDescription>在 sandbox playheadTime 下回放 Trading 风控决策一致性</CardDescription>
+          <CardTitle>沙箱回放风控验证</CardTitle>
+          <CardDescription>在沙箱时间轴下回放交易风控决策一致性</CardDescription>
         </CardHeader>
         <CardContent>
           <SandboxReplayPanel />

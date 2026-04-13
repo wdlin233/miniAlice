@@ -27,7 +27,7 @@ const newsSourceOptions: Array<{ value: BrowserNewsSource; label: string }> = [
 ];
 
 function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown refresh error.";
+  return error instanceof Error ? error.message : "刷新时发生未知错误。";
 }
 
 export function BrowserPanel({ initialMarketSnapshot, initialNewsSnapshot }: BrowserPanelProps) {
@@ -58,7 +58,7 @@ export function BrowserPanel({ initialMarketSnapshot, initialNewsSnapshot }: Bro
 
         if (!response.ok) {
           const errorData = (await response.json()) as BrowserRefreshError;
-          throw new Error(errorData.error ?? "Browser bootstrap refresh failed.");
+          throw new Error(errorData.error ?? "初始抓取失败。");
         }
 
         const data = (await response.json()) as BrowserCombinedSnapshot;
@@ -102,13 +102,13 @@ export function BrowserPanel({ initialMarketSnapshot, initialNewsSnapshot }: Bro
 
       if (!response.ok) {
         const errorData = (await response.json()) as BrowserRefreshError;
-        throw new Error(errorData.error ?? "Browser refresh failed.");
+        throw new Error(errorData.error ?? "市场刷新失败。");
       }
 
       const data = (await response.json()) as BrowserCombinedSnapshot;
       setMarketSnapshot(data.market);
       setNewsSnapshot(data.news);
-      setNotice(`Browser 已刷新：${new Date(data.refreshedAt).toLocaleTimeString()}`);
+      setNotice(`市场浏览器已刷新：${new Date(data.refreshedAt).toLocaleTimeString()}`);
     } catch (error) {
       setNotice(`刷新失败：${getErrorMessage(error)}`);
     } finally {
@@ -150,7 +150,7 @@ export function BrowserPanel({ initialMarketSnapshot, initialNewsSnapshot }: Bro
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Market Snapshot</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">市场快照</p>
           {marketSnapshot && marketSnapshot.quotes.length > 0 ? (
             <div className="space-y-2">
               {marketSnapshot.quotes.map((quote) => (
@@ -158,14 +158,14 @@ export function BrowserPanel({ initialMarketSnapshot, initialNewsSnapshot }: Bro
                   <div className="mb-1 flex items-center justify-between gap-2">
                     <Badge variant="outline">{quote.symbol}</Badge>
                     <span
-                      className={`text-xs font-semibold ${quote.changePercent24h >= 0 ? "text-emerald-600" : "text-rose-600"}`}
+                      className={`text-xs font-semibold ${quote.changePercent24h >= 0 ? "text-red-600" : "text-emerald-600"}`}
                     >
                       {quote.changePercent24h.toFixed(2)}%
                     </span>
                   </div>
-                  <p className="text-sm">Price: {quote.price.toFixed(2)}</p>
+                  <p className="text-sm">价格：{quote.price.toFixed(2)}</p>
                   <p className="text-xs text-muted-foreground">
-                    H/L: {quote.high24h.toFixed(2)} / {quote.low24h.toFixed(2)}
+                    最高/最低：{quote.high24h.toFixed(2)} / {quote.low24h.toFixed(2)}
                   </p>
                 </div>
               ))}
@@ -180,7 +180,7 @@ export function BrowserPanel({ initialMarketSnapshot, initialNewsSnapshot }: Bro
 
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            News Feed ({newsSnapshot?.source ?? newsSource})
+            资讯流 ({newsSnapshot?.source ?? newsSource})
           </p>
           {newsSnapshot && newsSnapshot.items.length > 0 ? (
             <div className="space-y-2">

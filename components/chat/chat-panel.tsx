@@ -15,6 +15,10 @@ interface ChatMessage {
   content: string;
 }
 
+function roleLabel(role: ChatRole): string {
+  return role === "user" ? "用户" : "助手";
+}
+
 const seedMessages: ChatMessage[] = [
   {
     role: "assistant",
@@ -68,10 +72,10 @@ export function ChatPanel() {
     <Card className="flex min-h-[520px] flex-col border-0 bg-card/90 shadow-sm backdrop-blur transition-all duration-300 hover:shadow-md">
       <CardHeader className="space-y-2">
         <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-xl">Chat</CardTitle>
+          <CardTitle className="text-xl">智能对话</CardTitle>
           <Badge variant="secondary" className="font-mono">{sessionId}</Badge>
         </div>
-        <CardDescription>Session 将以 JSONL 追加写入 data/sessions</CardDescription>
+        <CardDescription>会话将以 JSONL 形式追加写入 data/sessions</CardDescription>
       </CardHeader>
 
       <CardContent className="flex-1 overflow-hidden">
@@ -87,13 +91,13 @@ export function ChatPanel() {
               ].join(" ")}
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <p className="mb-1 text-[11px] uppercase tracking-[0.2em] opacity-70">{message.role}</p>
+              <p className="mb-1 text-[11px] uppercase tracking-[0.2em] opacity-70">{roleLabel(message.role)}</p>
               <p className="whitespace-pre-wrap">{message.content}</p>
             </div>
           ))}
           {isLoading && (
             <div className="max-w-[92%] border bg-background/80 rounded-2xl px-4 py-3 text-sm leading-6 animate-fade-in-up">
-              <p className="mb-1 text-[11px] uppercase tracking-[0.2em] opacity-70">assistant</p>
+              <p className="mb-1 text-[11px] uppercase tracking-[0.2em] opacity-70">助手</p>
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 <span>正在分析...</span>
@@ -114,7 +118,7 @@ export function ChatPanel() {
           />
           <Button type="submit" disabled={!draft.trim() || isLoading} className="self-end transition-all duration-200">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-            {isLoading ? "分析中..." : "发送到 Analysis"}
+            {isLoading ? "分析中..." : "发送到分析助手"}
           </Button>
         </form>
       </CardFooter>

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Dashboard - MiniAlice",
-  description: "File-driven AI trading agent dashboard"
+  title: "投资组合 - MiniAlice",
+  description: "文件驱动 AI 交易代理投资组合总览"
 };
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {

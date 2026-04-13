@@ -15,11 +15,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Strategy Hub", href: "/", icon: <Home className="h-5 w-5" /> },
-  { label: "Portfolio", href: "/dashboard", icon: <BarChart3 className="h-5 w-5" /> },
-  { label: "Chat", href: "/chat", icon: <MessageSquare className="h-5 w-5" /> },
-  { label: "Trading", href: "/trading", icon: <TrendingUp className="h-5 w-5" /> },
-  { label: "Sessions", href: "/sessions", icon: <FileText className="h-5 w-5" /> }
+  { label: "策略中心", href: "/", icon: <Home className="h-5 w-5" /> },
+  { label: "投资组合", href: "/dashboard", icon: <BarChart3 className="h-5 w-5" /> },
+  { label: "智能对话", href: "/chat", icon: <MessageSquare className="h-5 w-5" /> },
+  { label: "交易管理", href: "/trading", icon: <TrendingUp className="h-5 w-5" /> },
+  { label: "会话管理", href: "/sessions", icon: <FileText className="h-5 w-5" /> }
 ];
 
 interface MainLayoutProps {

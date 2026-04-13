@@ -21,7 +21,7 @@ const fontMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "MiniAlice",
-  description: "File-driven AI trading agent with Trading-as-Git and Sandbox."
+  description: "文件驱动的 AI 交易代理，内置交易流程与沙箱回放能力。"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
