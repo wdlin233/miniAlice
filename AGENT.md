@@ -71,3 +71,6 @@ data/
 - [x] Week 4: Trading Tool 仓位建议策略 + Wallet push 执行联动
 - [x] Week 4: Sandbox 回放模式接入 Trading 风控验证
 - [x] Week 4: E2E 测试 + 发布文档
+- [x] Week 5: 交互改版（隐藏手动 Git 操作细节）
+- [x] Week 5: Chat + 当前交易看板（简化 OpenAlice 风格）
+- [x] Week 5: 一键策略执行入口（自动串联执行流水）

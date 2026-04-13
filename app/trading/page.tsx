@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { CurrentTradingBoard } from "@/components/dashboard/current-trading-board";
+import { StrategyStudio } from "@/components/dashboard/strategy-studio";
 import { RiskControlPanel } from "@/components/trading/risk-control-panel";
 import { SandboxReplayPanel } from "@/components/trading/sandbox-replay-panel";
 import { CandlestickChart, WalletCards, GitCommitHorizontal, TrendingUp } from "lucide-react";
@@ -11,7 +11,7 @@ export default function TradingPage() {
       <div className="animate-fade-in-up">
         <h1 className="text-3xl font-bold tracking-tight">Trading Management</h1>
         <p className="mt-2 text-muted-foreground">
-          交易流程管理与风控策略
+          从策略输入到执行验证的全链路视图
         </p>
       </div>
 
@@ -83,32 +83,15 @@ export default function TradingPage() {
 
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader>
-          <CardTitle>交易流程</CardTitle>
-          <CardDescription>add &gt; commit &gt; push</CardDescription>
+          <CardTitle>策略执行中心</CardTitle>
+          <CardDescription>输入策略想法后自动完成记录与执行</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">add</Badge>
-              <span className="text-sm text-muted-foreground">staging.json</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">commit</Badge>
-              <span className="text-sm text-muted-foreground">wallet/commits/*.json</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge className="bg-accent text-accent-foreground">push</Badge>
-              <span className="text-sm text-muted-foreground">执行交易</span>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Button className="w-full">添加交易</Button>
-            <Button variant="secondary" className="w-full">提交交易</Button>
-            <Button variant="accent" className="w-full">执行交易</Button>
-          </div>
+        <CardContent>
+          <StrategyStudio />
         </CardContent>
       </Card>
+
+      <CurrentTradingBoard />
 
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader>
