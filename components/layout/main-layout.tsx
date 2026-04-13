@@ -29,11 +29,14 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const pathname = usePathname();
+  const activeTheme = resolvedTheme ?? theme ?? "light";
 
   // 客户端初始化：从localStorage读取状态
   useEffect(() => {
+    setMounted(true);
     const savedOpen = localStorage.getItem('sidebarOpen');
     if (savedOpen !== null) {
       setSidebarOpen(JSON.parse(savedOpen));
@@ -62,7 +65,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   };
 
   const toggleDarkMode = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    setTheme(activeTheme === 'dark' ? 'light' : 'dark');
   };
 
   return (
@@ -89,7 +92,9 @@ export function MainLayout({ children }: MainLayoutProps) {
               size="icon"
               onClick={toggleDarkMode}
             >
-              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              <span suppressHydrationWarning>
+                {mounted && activeTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </span>
             </Button>
           </div>
         </div>
@@ -148,7 +153,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         </aside>
 
         {/* 主内容 */}
-        <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? (sidebarCollapsed ? 'md:ml-18' : 'md:ml-64') : 'md:ml-0'}`}>
+        <main className="flex-1 transition-all duration-300">
           {children}
         </main>
       </div>
