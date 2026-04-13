@@ -30,12 +30,18 @@ export async function POST(request: Request) {
     await appendSessionMessage(sessionId, userMessage);
 
     const client = getOpenAIClient();
-    const result = await client.responses.create({
+    const result = await client.chat.completions.create({
       model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
-      input: prompt
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.4
     });
 
-    const reply = result.output_text?.trim() || "No response from model.";
+    const reply = result.choices[0]?.message?.content?.trim() || "No response from model.";
 
     const assistantMessage: SessionMessage = {
       role: "assistant",

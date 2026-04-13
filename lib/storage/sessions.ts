@@ -41,7 +41,7 @@ export function calculateTotalTokens(messages: SessionMessage[]): number {
 
 // 检查是否需要压缩
 export function shouldCompress(messages: SessionMessage[], config?: z.input<typeof CompressionConfigSchema>): boolean {
-  const validatedConfig = CompressionConfigSchema.parse(config);
+  const validatedConfig = CompressionConfigSchema.parse(config ?? {});
   const messageCount = messages.length;
   const totalTokens = calculateTotalTokens(messages);
   
@@ -91,7 +91,7 @@ export async function compressSession(
   sessionId: string,
   config?: z.input<typeof CompressionConfigSchema>
 ): Promise<CompressionResult> {
-  const validatedConfig = CompressionConfigSchema.parse(config);
+  const validatedConfig = CompressionConfigSchema.parse(config ?? {});
   const filePath = path.join(dataPaths.sessions, `${sessionId}.jsonl`);
   
   // 读取会话消息
