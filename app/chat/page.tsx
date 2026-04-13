@@ -13,7 +13,7 @@ export default function ChatPage() {
       <div className="animate-fade-in-up">
         <h1 className="text-3xl font-bold tracking-tight">智能对话</h1>
         <p className="mt-2 text-muted-foreground">
-          会话将以 JSONL 形式追加写入 data/sessions
+          会话将以 JSONL 形式写入并在刷新后自动恢复。
         </p>
       </div>
       

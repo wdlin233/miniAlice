@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { compressSession, readSession, shouldCompress, estimateTokens, calculateTotalTokens } from "@/lib/storage/sessions";
 import type { CompressionConfig } from "@/lib/storage/sessions";
 
+const SESSION_ID_PATTERN = /^[a-zA-Z0-9_-]{1,120}$/;
+
 interface SessionCompressRequest {
   sessionId: string;
   mode?: "manual" | "auto";
@@ -22,6 +24,27 @@ interface CompressResponse {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const sessionId = searchParams.get("sessionId")?.trim();
+
+    if (!sessionId) {
+      return NextResponse.json({ error: "sessionId is required." }, { status: 400 });
+    }
+
+    if (!SESSION_ID_PATTERN.test(sessionId)) {
+      return NextResponse.json({ error: "sessionId format is invalid." }, { status: 400 });
+    }
+
+    const messages = await readSession(sessionId);
+    return NextResponse.json({ sessionId, messages });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Session read route failed.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as SessionCompressRequest;
@@ -31,6 +54,10 @@ export async function POST(request: Request) {
 
     if (!sessionId) {
       return NextResponse.json({ error: "sessionId is required." }, { status: 400 });
+    }
+
+    if (!SESSION_ID_PATTERN.test(sessionId)) {
+      return NextResponse.json({ error: "sessionId format is invalid." }, { status: 400 });
     }
 
     // 读取会话消息

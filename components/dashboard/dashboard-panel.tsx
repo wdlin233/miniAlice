@@ -1,8 +1,8 @@
-import { Activity, Clock3, TrendingUp, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { Activity, ArrowRight, Clock3, TrendingUp, type LucideIcon } from "lucide-react";
 
 import { BrowserPanel } from "@/components/dashboard/browser-panel";
-import { CurrentTradingBoard } from "@/components/dashboard/current-trading-board";
-import { StrategyStudio } from "@/components/dashboard/strategy-studio";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { listSessions } from "@/lib/storage/sessions";
 import { listTradingOrders } from "@/lib/storage/trading-orders";
@@ -78,15 +78,21 @@ export async function DashboardPanel() {
 
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">策略执行</CardTitle>
-          <CardDescription>输入策略想法，系统自动完成策略记录与执行流水。</CardDescription>
+          <CardTitle className="text-base">执行入口</CardTitle>
+          <CardDescription>策略执行与交易看板已集中到交易管理页，投资组合页仅保留总览视角。</CardDescription>
         </CardHeader>
-        <CardContent>
-          <StrategyStudio />
+        <CardContent className="flex flex-wrap gap-2">
+          <Button asChild>
+            <Link href="/trading">
+              进入交易管理
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/chat">进入智能对话</Link>
+          </Button>
         </CardContent>
       </Card>
-
-      <CurrentTradingBoard />
 
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader className="pb-2">

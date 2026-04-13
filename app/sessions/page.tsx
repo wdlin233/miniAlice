@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Clock, Trash2, Download } from "lucide-react";
+import { Clock, FileText, MessageSquare } from "lucide-react";
 import { listSessions } from "@/lib/storage/sessions";
 
 export default async function SessionsPage() {
@@ -33,10 +34,11 @@ export default async function SessionsPage() {
           ) : (
             <div className="space-y-3">
               {sessions.map((session) => {
-                const sessionName = session.replace('.jsonl', '');
-                const timestamp = sessionName.replace('session-', '');
-                const date = new Date(parseInt(timestamp));
-                const formattedDate = date.toLocaleString();
+                const sessionName = session.replace(".jsonl", "");
+                const numericStamp = Number(sessionName.replace("session-", ""));
+                const formattedDate = Number.isFinite(numericStamp)
+                  ? new Date(numericStamp).toLocaleString()
+                  : "未知创建时间";
 
                 return (
                   <div key={session} className="flex items-center justify-between rounded-lg border p-4 transition-all hover:shadow-sm">
@@ -51,11 +53,11 @@ export default async function SessionsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive">
-                        <Trash2 className="h-4 w-4" />
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/chat?sessionId=${encodeURIComponent(sessionName)}`}>
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          恢复对话
+                        </Link>
                       </Button>
                     </div>
                   </div>

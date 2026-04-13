@@ -11,7 +11,7 @@ export default function TradingPage() {
       <div className="animate-fade-in-up">
         <h1 className="text-3xl font-bold tracking-tight">交易管理</h1>
         <p className="mt-2 text-muted-foreground">
-          从策略输入到执行验证的全链路视图
+          策略执行、交易看板、模拟盘与风控验证的统一执行中心。
         </p>
       </div>
 
