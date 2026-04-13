@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import {
   browserCombinedSnapshotSchema,
   browserRefreshRequestSchema,
@@ -18,6 +20,7 @@ import {
   type BrowserMarketSnapshot,
   type BrowserNewsSnapshot
 } from "@/lib/schemas/browser";
+import { dataPaths, readJsonFile } from "@/lib/storage/file-store";
 import { readBrowserConfig } from "@/lib/storage/browser-config";
 
 interface BinanceTickerResponse {
@@ -27,6 +30,24 @@ interface BinanceTickerResponse {
   highPrice?: string;
   lowPrice?: string;
   volume?: string;
+}
+
+interface OkxTickerResponse {
+  data?: Array<{
+    instId?: string;
+    last?: string;
+    open24h?: string;
+    high24h?: string;
+    low24h?: string;
+    vol24h?: string;
+    volCcy24h?: string;
+  }>;
+}
+
+interface CoinbaseSpotResponse {
+  data?: {
+    amount?: string;
+  };
 }
 
 interface CryptoCompareNewsResponse {
@@ -63,12 +84,47 @@ interface CacheEntry<T> {
   staleUntil: number;
 }
 
+interface QuoteFetchResult {
+  quote: BrowserMarketQuote;
+  warnings: string[];
+}
+
+interface LocalPaperAccountLike {
+  positions?: Array<{
+    symbol?: string;
+    lastPriceUsd?: number;
+  }>;
+}
+
 const marketCache = new Map<string, CacheEntry<BrowserMarketSnapshot>>();
 const newsCache = new Map<string, CacheEntry<BrowserNewsSnapshot>>();
 const combinedCache = new Map<string, CacheEntry<BrowserCombinedSnapshot>>();
 
+const paperAccountPath = path.join(dataPaths.trading, "paper-account.json");
+const staticReferencePriceBySymbol: Record<string, number> = {
+  BTCUSDT: 68000,
+  ETHUSDT: 3200,
+  SOLUSDT: 150,
+  BNBUSDT: 600,
+  XRPUSDT: 0.6
+};
+
 function normalizeSymbol(symbol: string): string {
   return symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+function extractBaseAsset(symbol: string): string {
+  const normalized = normalizeSymbol(symbol);
+
+  if (normalized.endsWith("USDT")) {
+    return normalized.slice(0, -4);
+  }
+
+  if (normalized.endsWith("USD")) {
+    return normalized.slice(0, -3);
+  }
+
+  return normalized;
 }
 
 function safeNumber(input: string | undefined): number {
@@ -147,7 +203,7 @@ async function fetchWithTimeout(
   }
 }
 
-async function fetchQuoteBySymbol(
+async function fetchQuoteByPrimaryEndpoint(
   symbol: string,
   marketEndpoint: string,
   requestTimeoutMs: number
@@ -156,25 +212,187 @@ async function fetchQuoteBySymbol(
     `${marketEndpoint}?symbol=${encodeURIComponent(symbol)}`,
     requestTimeoutMs,
     {
-    method: "GET",
-    cache: "no-store"
+      method: "GET",
+      cache: "no-store"
     }
   );
 
   if (!response.ok) {
-    throw new Error(`market endpoint returned ${response.status} for ${symbol}`);
+    throw new Error(`primary endpoint returned ${response.status} for ${symbol}`);
   }
 
   const payload = (await response.json()) as BinanceTickerResponse;
+  const price = safeNumber(payload.lastPrice);
+
+  if (price <= 0) {
+    throw new Error(`primary endpoint returned invalid price for ${symbol}`);
+  }
 
   return browserMarketQuoteSchema.parse({
     symbol: payload.symbol ?? symbol,
-    price: safeNumber(payload.lastPrice),
+    price,
     changePercent24h: safeNumber(payload.priceChangePercent),
     high24h: safeNumber(payload.highPrice),
     low24h: safeNumber(payload.lowPrice),
     volume24h: safeNumber(payload.volume),
     fetchedAt: new Date().toISOString()
+  });
+}
+
+async function fetchQuoteFromOkx(symbol: string, requestTimeoutMs: number): Promise<BrowserMarketQuote> {
+  const base = extractBaseAsset(symbol);
+  const instId = `${base}-USDT`;
+
+  const response = await fetchWithTimeout(
+    `https://www.okx.com/api/v5/market/ticker?instId=${encodeURIComponent(instId)}`,
+    requestTimeoutMs,
+    {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        "User-Agent": "MiniAlice/1.0"
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`okx endpoint returned ${response.status} for ${symbol}`);
+  }
+
+  const payload = (await response.json()) as OkxTickerResponse;
+  const ticker = payload.data?.[0];
+  const price = safeNumber(ticker?.last);
+  if (price <= 0) {
+    throw new Error(`okx endpoint returned invalid price for ${symbol}`);
+  }
+
+  const open24h = safeNumber(ticker?.open24h);
+  const changePercent24h = open24h > 0 ? Number((((price - open24h) / open24h) * 100).toFixed(4)) : 0;
+  const high24h = safeNumber(ticker?.high24h) || price;
+  const low24h = safeNumber(ticker?.low24h) || price;
+  const volume24h = safeNumber(ticker?.volCcy24h) || safeNumber(ticker?.vol24h);
+
+  return browserMarketQuoteSchema.parse({
+    symbol: normalizeSymbol(ticker?.instId ?? symbol).replace(/USDT$/, "USDT"),
+    price,
+    changePercent24h,
+    high24h,
+    low24h,
+    volume24h,
+    fetchedAt: new Date().toISOString()
+  });
+}
+
+async function fetchQuoteFromCoinbase(symbol: string, requestTimeoutMs: number): Promise<BrowserMarketQuote> {
+  const base = extractBaseAsset(symbol);
+  const pair = `${base}-USD`;
+
+  const response = await fetchWithTimeout(
+    `https://api.coinbase.com/v2/prices/${encodeURIComponent(pair)}/spot`,
+    requestTimeoutMs,
+    {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        "User-Agent": "MiniAlice/1.0"
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`coinbase endpoint returned ${response.status} for ${symbol}`);
+  }
+
+  const payload = (await response.json()) as CoinbaseSpotResponse;
+  const price = safeNumber(payload.data?.amount);
+  if (price <= 0) {
+    throw new Error(`coinbase endpoint returned invalid price for ${symbol}`);
+  }
+
+  return browserMarketQuoteSchema.parse({
+    symbol,
+    price,
+    changePercent24h: 0,
+    high24h: price,
+    low24h: price,
+    volume24h: 0,
+    fetchedAt: new Date().toISOString()
+  });
+}
+
+async function fetchQuoteBySymbol(
+  symbol: string,
+  marketEndpoint: string,
+  requestTimeoutMs: number
+): Promise<QuoteFetchResult> {
+  const warnings: string[] = [];
+
+  try {
+    const quote = await fetchQuoteByPrimaryEndpoint(symbol, marketEndpoint, requestTimeoutMs);
+    return { quote, warnings };
+  } catch (error) {
+    warnings.push(`${symbol}: primary source failed (${getErrorMessage(error)})`);
+  }
+
+  try {
+    const quote = await fetchQuoteFromOkx(symbol, requestTimeoutMs);
+    warnings.push(`${symbol}: switched to OKX fallback.`);
+    return { quote, warnings };
+  } catch (error) {
+    warnings.push(`${symbol}: okx fallback failed (${getErrorMessage(error)})`);
+  }
+
+  try {
+    const quote = await fetchQuoteFromCoinbase(symbol, requestTimeoutMs);
+    warnings.push(`${symbol}: switched to Coinbase fallback (24h change unavailable).`);
+    return { quote, warnings };
+  } catch (error) {
+    warnings.push(`${symbol}: coinbase fallback failed (${getErrorMessage(error)})`);
+  }
+
+  throw new Error(warnings.join(" | "));
+}
+
+async function readLocalPriceMap(): Promise<Map<string, number>> {
+  const raw = await readJsonFile<LocalPaperAccountLike>(paperAccountPath, {});
+  const map = new Map<string, number>();
+
+  for (const position of raw.positions ?? []) {
+    if (!position || typeof position.symbol !== "string") {
+      continue;
+    }
+
+    const price = Number(position.lastPriceUsd);
+    if (Number.isFinite(price) && price > 0) {
+      map.set(normalizeSymbol(position.symbol), price);
+    }
+  }
+
+  return map;
+}
+
+async function buildLocalFallbackQuotes(symbols: string[]): Promise<BrowserMarketQuote[]> {
+  const localPriceMap = await readLocalPriceMap();
+
+  return symbols.flatMap((symbol) => {
+    const normalized = normalizeSymbol(symbol);
+    const price = localPriceMap.get(normalized) ?? staticReferencePriceBySymbol[normalized] ?? 0;
+
+    if (!Number.isFinite(price) || price <= 0) {
+      return [];
+    }
+
+    const parsed = browserMarketQuoteSchema.safeParse({
+      symbol: normalized,
+      price,
+      changePercent24h: 0,
+      high24h: price,
+      low24h: price,
+      volume24h: 0,
+      fetchedAt: new Date().toISOString()
+    });
+
+    return parsed.success ? [parsed.data] : [];
   });
 }
 
@@ -204,12 +422,29 @@ export async function fetchMarketSnapshot(input?: BrowserMarketRequest): Promise
 
   settled.forEach((result, index) => {
     if (result.status === "fulfilled") {
-      quotes.push(result.value);
+      quotes.push(result.value.quote);
+      errors.push(...result.value.warnings);
       return;
     }
 
     errors.push(`${symbols[index]}: ${result.reason instanceof Error ? result.reason.message : "unknown error"}`);
   });
+
+  if (quotes.length === 0) {
+    const stale = getCacheStale(marketCache, cacheKey);
+    if (stale) {
+      return browserMarketSnapshotSchema.parse({
+        ...stale,
+        errors: [...stale.errors, ...errors]
+      });
+    }
+
+    const localFallbackQuotes = await buildLocalFallbackQuotes(symbols);
+    if (localFallbackQuotes.length > 0) {
+      quotes.push(...localFallbackQuotes);
+      errors.push("All remote market sources timed out. Using local fallback prices (not real-time).");
+    }
+  }
 
   const snapshot = browserMarketSnapshotSchema.parse({
     tool: "browser",
@@ -217,16 +452,6 @@ export async function fetchMarketSnapshot(input?: BrowserMarketRequest): Promise
     errors,
     fetchedAt: new Date().toISOString()
   });
-
-  if (snapshot.quotes.length === 0) {
-    const stale = getCacheStale(marketCache, cacheKey);
-    if (stale) {
-      return browserMarketSnapshotSchema.parse({
-        ...stale,
-        errors: [...stale.errors, ...snapshot.errors]
-      });
-    }
-  }
 
   setCache(marketCache, cacheKey, snapshot, config.marketCacheTtlMs);
   return snapshot;
