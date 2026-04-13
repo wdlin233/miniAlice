@@ -1,16 +1,8 @@
 {
   "initialBalanceUsd": 10000,
-  "cashUsd": 9965.9,
-  "realizedPnlUsd": -0.03,
-  "feePaidUsd": 0.1,
-  "positions": [
-    {
-      "symbol": "BTCUSDT",
-      "quantity": 0.0005,
-      "averageEntryPriceUsd": 68000,
-      "lastPriceUsd": 68000,
-      "updatedAt": "2026-04-13T12:12:10.998Z"
-    }
-  ],
-  "updatedAt": "2026-04-13T12:12:10.998Z"
+  "cashUsd": 10000,
+  "realizedPnlUsd": 0,
+  "feePaidUsd": 0,
+  "positions": [],
+  "updatedAt": "2026-04-13T00:00:00.000Z"
 }

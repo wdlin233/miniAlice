@@ -1,19 +1,31 @@
 import crypto from "node:crypto";
 
 import {
+  paperAccountResponseSchema,
   paperAccountViewSchema,
+  paperPendingOrderSchema,
   paperOrderCreateInputSchema,
   paperOrderResponseSchema,
   paperTradeSchema,
   type PaperAccountResponse,
   type PaperAccountState,
   type PaperAccountView,
+  type PaperPendingOrder,
   type PaperOrderCreateInput,
   type PaperOrderResponse,
-  type PaperPositionState
+  type PaperPositionState,
+  type PaperTrade,
+  type PaperTradeTrigger
 } from "@/lib/schemas/paper-trading";
 import { fetchMarketSnapshot } from "@/lib/tools/browser";
-import { appendPaperTrade, listPaperTrades, readPaperAccountState, writePaperAccountState } from "@/lib/storage/paper-trading";
+import {
+  appendPaperTrade,
+  listPaperTrades,
+  readPaperAccountState,
+  readPaperPendingOrders,
+  writePaperAccountState,
+  writePaperPendingOrders
+} from "@/lib/storage/paper-trading";
 
 const PAPER_FEE_RATE = 0.001;
 const SECONDARY_REQUEST_TIMEOUT_MS = 2500;
@@ -25,6 +37,19 @@ const staticReferencePriceBySymbol: Record<string, number> = {
   BNBUSDT: 600,
   XRPUSDT: 0.6
 };
+
+interface QuoteLookupResult {
+  prices: Map<string, number>;
+  errors: string[];
+}
+
+interface SyncState {
+  account: PaperAccountState;
+  pendingOrders: PaperPendingOrder[];
+  prices: Map<string, number>;
+  marketErrors: string[];
+  events: string[];
+}
 
 function normalizeSymbol(symbol: string): string {
   return symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -112,10 +137,7 @@ async function fetchSecondaryPrice(symbol: string): Promise<number | null> {
   return null;
 }
 
-async function fetchQuoteMap(symbols: string[]): Promise<{
-  prices: Map<string, number>;
-  errors: string[];
-}> {
+async function fetchQuoteMap(symbols: string[]): Promise<QuoteLookupResult> {
   if (symbols.length === 0) {
     return { prices: new Map<string, number>(), errors: [] };
   }
@@ -131,6 +153,42 @@ async function fetchQuoteMap(symbols: string[]): Promise<{
     prices,
     errors: snapshot.errors
   };
+}
+
+async function resolveExecutionPrice(
+  account: PaperAccountState,
+  symbol: string,
+  primaryQuote?: QuoteLookupResult
+): Promise<{ priceUsd: number; warnings: string[] }> {
+  const normalized = normalizeSymbol(symbol);
+  const warnings = [...(primaryQuote?.errors ?? [])];
+
+  const priceFromPrimary = primaryQuote?.prices.get(normalized);
+  if (priceFromPrimary && Number.isFinite(priceFromPrimary) && priceFromPrimary > 0) {
+    return { priceUsd: priceFromPrimary, warnings };
+  }
+
+  const secondaryPrice = await fetchSecondaryPrice(symbol);
+  if (secondaryPrice && Number.isFinite(secondaryPrice) && secondaryPrice > 0) {
+    warnings.push(`主行情源不可用，已切换备用行情源执行 ${symbol}。`);
+    return { priceUsd: secondaryPrice, warnings };
+  }
+
+  const storedPrice = account.positions.find((item) => normalizeSymbol(item.symbol) === normalized)?.lastPriceUsd;
+  if (storedPrice && Number.isFinite(storedPrice) && storedPrice > 0) {
+    warnings.push(`实时行情暂不可用，已使用账户内最近价格执行 ${symbol}。`);
+    return { priceUsd: storedPrice, warnings };
+  }
+
+  const staticPrice = staticReferencePriceBySymbol[normalized];
+  if (staticPrice && Number.isFinite(staticPrice) && staticPrice > 0) {
+    warnings.push(`实时行情暂不可用，已使用参考价格执行 ${symbol}。`);
+    return { priceUsd: staticPrice, warnings };
+  }
+
+  throw new Error(
+    `未获取到 ${symbol} 的实时行情，无法下单。${warnings.length > 0 ? `详情：${warnings.join("; ")}` : ""}`
+  );
 }
 
 function toAccountView(account: PaperAccountState, prices: Map<string, number>): PaperAccountView {
@@ -149,6 +207,8 @@ function toAccountView(account: PaperAccountState, prices: Map<string, number>):
         quantity: round(position.quantity),
         averageEntryPriceUsd: round2(position.averageEntryPriceUsd),
         lastPriceUsd: round2(price),
+        takeProfitPriceUsd: position.takeProfitPriceUsd ? round2(position.takeProfitPriceUsd) : undefined,
+        stopLossPriceUsd: position.stopLossPriceUsd ? round2(position.stopLossPriceUsd) : undefined,
         marketValueUsd,
         unrealizedPnlUsd,
         unrealizedPnlPercent,
@@ -203,6 +263,8 @@ function applyBuy(
       quantity: round(input.quantity),
       averageEntryPriceUsd: round2(priceUsd),
       lastPriceUsd: round2(priceUsd),
+      takeProfitPriceUsd: input.takeProfitPriceUsd ? round2(input.takeProfitPriceUsd) : undefined,
+      stopLossPriceUsd: input.stopLossPriceUsd ? round2(input.stopLossPriceUsd) : undefined,
       updatedAt: createdAt
     });
   } else {
@@ -215,6 +277,8 @@ function applyBuy(
       quantity: nextQuantity,
       averageEntryPriceUsd: nextAverage,
       lastPriceUsd: round2(priceUsd),
+      takeProfitPriceUsd: input.takeProfitPriceUsd ? round2(input.takeProfitPriceUsd) : current.takeProfitPriceUsd,
+      stopLossPriceUsd: input.stopLossPriceUsd ? round2(input.stopLossPriceUsd) : current.stopLossPriceUsd,
       updatedAt: createdAt
     };
   }
@@ -284,102 +348,319 @@ function applySell(
   };
 }
 
-export async function getPaperTradingSnapshot(limit = 20): Promise<PaperAccountResponse> {
-  const account = await readPaperAccountState();
-  const symbols = account.positions.map((item) => item.symbol);
-
-  let prices = new Map<string, number>();
-  let marketErrors: string[] = [];
-
-  try {
-    const quoteResult = await fetchQuoteMap(symbols);
-    prices = quoteResult.prices;
-    marketErrors = quoteResult.errors;
-  } catch (error) {
-    marketErrors = [error instanceof Error ? error.message : "行情读取失败"]; 
+function isLimitTriggered(order: PaperPendingOrder, priceUsd: number): boolean {
+  if (order.side === "buy") {
+    return priceUsd <= order.limitPriceUsd;
   }
 
-  const accountView = toAccountView(account, prices);
-  const recentTrades = await listPaperTrades(limit);
-
-  return {
-    tool: "paper",
-    account: accountView,
-    recentTrades,
-    marketErrors
-  };
+  return priceUsd >= order.limitPriceUsd;
 }
 
-export async function placePaperOrder(input: PaperOrderCreateInput): Promise<PaperOrderResponse> {
-  const account = await readPaperAccountState();
-  const createdAt = new Date().toISOString();
+function buildTradeRecord(params: {
+  symbol: string;
+  side: PaperOrderCreateInput["side"];
+  quantity: number;
+  priceUsd: number;
+  notionalUsd: number;
+  feeUsd: number;
+  realizedPnlUsd: number;
+  orderType: PaperOrderCreateInput["orderType"];
+  trigger: PaperTradeTrigger;
+  createdAt: string;
+}): PaperTrade {
+  return paperTradeSchema.parse({
+    id: crypto.randomUUID(),
+    symbol: params.symbol,
+    side: params.side,
+    orderType: params.orderType,
+    trigger: params.trigger,
+    quantity: round(params.quantity),
+    priceUsd: round2(params.priceUsd),
+    notionalUsd: round2(params.notionalUsd),
+    feeUsd: round2(params.feeUsd),
+    realizedPnlUsd: round2(params.realizedPnlUsd),
+    status: "filled",
+    createdAt: params.createdAt
+  });
+}
 
-  const quoteResult = await fetchQuoteMap([input.symbol]);
-  const normalized = normalizeSymbol(input.symbol);
-  const orderWarnings = [...quoteResult.errors];
+async function syncPaperTradingState(): Promise<SyncState> {
+  let account = await readPaperAccountState();
+  const pendingOrders = await readPaperPendingOrders();
+  const events: string[] = [];
+  const syncWarnings: string[] = [];
 
-  let executionPrice = quoteResult.prices.get(normalized) ?? null;
+  const symbolSet = new Set<string>([
+    ...account.positions.map((item) => item.symbol),
+    ...pendingOrders.filter((item) => item.status === "open").map((item) => item.symbol)
+  ]);
 
-  if (!executionPrice) {
-    const secondaryPrice = await fetchSecondaryPrice(input.symbol);
-    if (secondaryPrice) {
-      executionPrice = secondaryPrice;
-      orderWarnings.push(`主行情源不可用，已切换备用行情源执行 ${input.symbol}。`);
-    }
+  let primaryQuotes: QuoteLookupResult = { prices: new Map<string, number>(), errors: [] };
+  try {
+    primaryQuotes = await fetchQuoteMap(Array.from(symbolSet));
+    syncWarnings.push(...primaryQuotes.errors);
+  } catch (error) {
+    syncWarnings.push(error instanceof Error ? error.message : "行情读取失败");
   }
 
-  if (!executionPrice) {
-    const storedPrice = account.positions.find((item) => normalizeSymbol(item.symbol) === normalized)?.lastPriceUsd;
-    if (storedPrice) {
-      executionPrice = storedPrice;
-      orderWarnings.push(`实时行情暂不可用，已使用账户内最近价格执行 ${input.symbol}。`);
+  let pendingChanged = false;
+  let accountChanged = false;
+  const tradesToAppend: PaperTrade[] = [];
+
+  const nextPending = pendingOrders.map((item) => ({ ...item }));
+
+  for (let i = 0; i < nextPending.length; i += 1) {
+    const pending = nextPending[i];
+    if (!pending) {
+      continue;
     }
+
+    if (pending.status !== "open") {
+      continue;
+    }
+
+    let priceResult: { priceUsd: number; warnings: string[] };
+    try {
+      priceResult = await resolveExecutionPrice(account, pending.symbol, primaryQuotes);
+    } catch {
+      continue;
+    }
+
+    syncWarnings.push(...priceResult.warnings);
+
+    if (!isLimitTriggered(pending, priceResult.priceUsd)) {
+      continue;
+    }
+
+    const now = new Date().toISOString();
+    const fillInput = paperOrderCreateInputSchema.parse({
+      symbol: pending.symbol,
+      side: pending.side,
+      orderType: "limit",
+      quantity: pending.quantity,
+      takeProfitPriceUsd: pending.takeProfitPriceUsd,
+      stopLossPriceUsd: pending.stopLossPriceUsd
+    });
+
+    const orderResult =
+      fillInput.side === "buy"
+        ? applyBuy(account, fillInput, priceResult.priceUsd, now)
+        : applySell(account, fillInput, priceResult.priceUsd, now);
+
+    account = orderResult.updated;
+    accountChanged = true;
+
+    nextPending[i] = {
+      ...pending,
+      status: "filled",
+      reason: "limit_triggered",
+      filledAt: now,
+      updatedAt: now
+    };
+    pendingChanged = true;
+
+    tradesToAppend.push(
+      buildTradeRecord({
+        symbol: fillInput.symbol,
+        side: fillInput.side,
+        quantity: fillInput.quantity,
+        priceUsd: priceResult.priceUsd,
+        notionalUsd: orderResult.notionalUsd,
+        feeUsd: orderResult.feeUsd,
+        realizedPnlUsd: orderResult.realizedPnlUsd,
+        orderType: "limit",
+        trigger: "limit",
+        createdAt: now
+      })
+    );
+
+    events.push(`限价单触发成交：${fillInput.symbol} ${fillInput.side === "buy" ? "买入" : "卖出"} ${fillInput.quantity}`);
   }
 
-  if (!executionPrice) {
-    const staticPrice = staticReferencePriceBySymbol[normalized];
-    if (staticPrice) {
-      executionPrice = staticPrice;
-      orderWarnings.push(`实时行情暂不可用，已使用参考价格执行 ${input.symbol}。`);
+  const existingPositions = [...account.positions];
+  for (const position of existingPositions) {
+    const hasTakeProfit = position.takeProfitPriceUsd !== undefined;
+    const hasStopLoss = position.stopLossPriceUsd !== undefined;
+    if (!hasTakeProfit && !hasStopLoss) {
+      continue;
     }
-  }
 
-  if (!executionPrice) {
-    throw new Error(
-      `未获取到 ${input.symbol} 的实时行情，无法下单。${quoteResult.errors.length > 0 ? `详情：${quoteResult.errors.join("; ")}` : ""}`
+    let priceResult: { priceUsd: number; warnings: string[] };
+    try {
+      priceResult = await resolveExecutionPrice(account, position.symbol, primaryQuotes);
+    } catch {
+      continue;
+    }
+
+    syncWarnings.push(...priceResult.warnings);
+
+    const shouldStopLoss = hasStopLoss && priceResult.priceUsd <= (position.stopLossPriceUsd as number);
+    const shouldTakeProfit = !shouldStopLoss && hasTakeProfit && priceResult.priceUsd >= (position.takeProfitPriceUsd as number);
+
+    if (!shouldStopLoss && !shouldTakeProfit) {
+      continue;
+    }
+
+    const now = new Date().toISOString();
+    const closeInput = paperOrderCreateInputSchema.parse({
+      symbol: position.symbol,
+      side: "sell",
+      orderType: "market",
+      quantity: position.quantity
+    });
+
+    const closeResult = applySell(account, closeInput, priceResult.priceUsd, now);
+    account = closeResult.updated;
+    accountChanged = true;
+
+    const trigger: PaperTradeTrigger = shouldStopLoss ? "stop_loss" : "take_profit";
+    tradesToAppend.push(
+      buildTradeRecord({
+        symbol: closeInput.symbol,
+        side: closeInput.side,
+        quantity: closeInput.quantity,
+        priceUsd: priceResult.priceUsd,
+        notionalUsd: closeResult.notionalUsd,
+        feeUsd: closeResult.feeUsd,
+        realizedPnlUsd: closeResult.realizedPnlUsd,
+        orderType: "market",
+        trigger,
+        createdAt: now
+      })
+    );
+
+    events.push(
+      `${shouldStopLoss ? "止损" : "止盈"}触发：${closeInput.symbol} 自动平仓 ${closeInput.quantity.toFixed(6)}`
     );
   }
 
+  if (accountChanged) {
+    await writePaperAccountState(account);
+  }
+
+  if (pendingChanged) {
+    await writePaperPendingOrders(nextPending);
+  }
+
+  for (const trade of tradesToAppend) {
+    await appendPaperTrade(trade);
+  }
+
+  return {
+    account,
+    pendingOrders: nextPending,
+    prices: primaryQuotes.prices,
+    marketErrors: syncWarnings,
+    events
+  };
+}
+
+export async function getPaperTradingSnapshot(limit = 20): Promise<PaperAccountResponse> {
+  const synced = await syncPaperTradingState();
+  const accountView = toAccountView(synced.account, synced.prices);
+  const recentTrades = await listPaperTrades(limit);
+
+  const pendingOrders = synced.pendingOrders
+    .filter((item) => item.status === "open")
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map((item) => paperPendingOrderSchema.parse(item));
+
+  return paperAccountResponseSchema.parse({
+    tool: "paper",
+    account: accountView,
+    pendingOrders,
+    recentTrades,
+    marketErrors: synced.marketErrors,
+    events: synced.events
+  });
+}
+
+export async function placePaperOrder(input: PaperOrderCreateInput): Promise<PaperOrderResponse> {
+  const synced = await syncPaperTradingState();
+  let account = synced.account;
+  const pendingOrders = synced.pendingOrders;
+  const orderWarnings = [...synced.marketErrors];
+
+  let primaryQuote: QuoteLookupResult;
+  try {
+    primaryQuote = await fetchQuoteMap([input.symbol]);
+  } catch (error) {
+    primaryQuote = {
+      prices: new Map<string, number>(),
+      errors: [error instanceof Error ? error.message : "行情读取失败"]
+    };
+  }
+
+  const priceResult = await resolveExecutionPrice(account, input.symbol, primaryQuote);
+  const executionPrice = priceResult.priceUsd;
+  orderWarnings.push(...priceResult.warnings);
+
+  if (input.orderType === "limit") {
+    const limitPrice = input.limitPriceUsd as number;
+    const willFillNow = input.side === "buy" ? executionPrice <= limitPrice : executionPrice >= limitPrice;
+
+    if (!willFillNow) {
+      const now = new Date().toISOString();
+      const pendingOrder = paperPendingOrderSchema.parse({
+        id: crypto.randomUUID(),
+        symbol: input.symbol,
+        side: input.side,
+        quantity: round(input.quantity),
+        limitPriceUsd: round2(limitPrice),
+        takeProfitPriceUsd: input.takeProfitPriceUsd ? round2(input.takeProfitPriceUsd) : undefined,
+        stopLossPriceUsd: input.stopLossPriceUsd ? round2(input.stopLossPriceUsd) : undefined,
+        status: "open",
+        createdAt: now,
+        updatedAt: now
+      });
+
+      await writePaperPendingOrders([...pendingOrders, pendingOrder]);
+      const snapshot = await getPaperTradingSnapshot(20);
+
+      return paperOrderResponseSchema.parse({
+        tool: "paper",
+        account: snapshot.account,
+        pendingOrder,
+        marketErrors: [...orderWarnings, ...snapshot.marketErrors],
+        message: `限价单已挂单，等待触发：${input.symbol} ${input.side === "buy" ? "买入" : "卖出"} @ ${limitPrice}`
+      });
+    }
+  }
+
+  const now = new Date().toISOString();
   const orderResult =
     input.side === "buy"
-      ? applyBuy(account, input, executionPrice, createdAt)
-      : applySell(account, input, executionPrice, createdAt);
+      ? applyBuy(account, input, executionPrice, now)
+      : applySell(account, input, executionPrice, now);
+  account = orderResult.updated;
+  await writePaperAccountState(account);
 
-  const nextState = orderResult.updated;
-  await writePaperAccountState(nextState);
-
-  const trade = paperTradeSchema.parse({
-    id: crypto.randomUUID(),
+  const tradeTrigger: PaperTradeTrigger = input.orderType === "limit" ? "limit" : "manual";
+  const trade = buildTradeRecord({
     symbol: input.symbol,
     side: input.side,
-    quantity: round(input.quantity),
-    priceUsd: round2(executionPrice),
+    quantity: input.quantity,
+    priceUsd: executionPrice,
     notionalUsd: orderResult.notionalUsd,
     feeUsd: orderResult.feeUsd,
     realizedPnlUsd: orderResult.realizedPnlUsd,
-    status: "filled",
-    createdAt
+    orderType: input.orderType,
+    trigger: tradeTrigger,
+    createdAt: now
   });
-
   await appendPaperTrade(trade);
 
   const snapshot = await getPaperTradingSnapshot(20);
 
   return paperOrderResponseSchema.parse({
     tool: "paper",
-    trade,
     account: snapshot.account,
-    marketErrors: [...orderWarnings, ...snapshot.marketErrors]
+    trade,
+    marketErrors: [...orderWarnings, ...snapshot.marketErrors],
+    message:
+      input.orderType === "limit"
+        ? `限价单已触发成交：${input.symbol} ${input.side === "buy" ? "买入" : "卖出"}`
+        : `市价单成交：${input.symbol} ${input.side === "buy" ? "买入" : "卖出"}`
   });
 }
 

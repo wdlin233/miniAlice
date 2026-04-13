@@ -6,8 +6,10 @@ import { Loader2, RefreshCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { PaperAccountResponse, PaperOrderResponse } from "@/lib/schemas/paper-trading";
+import type { PaperAccountResponse, PaperOrderResponse, PaperTradeTrigger } from "@/lib/schemas/paper-trading";
 import type { TradingSide } from "@/lib/schemas/trading";
+
+type OrderType = "market" | "limit";
 
 interface ApiError {
   error?: string;
@@ -15,8 +17,10 @@ interface ApiError {
 
 interface SnapshotState {
   account: PaperAccountResponse["account"];
+  pendingOrders: PaperAccountResponse["pendingOrders"];
   recentTrades: PaperAccountResponse["recentTrades"];
   marketErrors: string[];
+  events: string[];
 }
 
 function formatUsd(value: number): string {
@@ -38,6 +42,30 @@ function sideLabel(side: TradingSide): string {
   return side === "buy" ? "买入" : "卖出";
 }
 
+function orderTypeLabel(orderType: OrderType): string {
+  return orderType === "market" ? "市价" : "限价";
+}
+
+function triggerLabel(trigger: PaperTradeTrigger): string {
+  if (trigger === "manual") {
+    return "手动下单";
+  }
+
+  if (trigger === "limit") {
+    return "限价触发";
+  }
+
+  if (trigger === "take_profit") {
+    return "止盈触发";
+  }
+
+  if (trigger === "stop_loss") {
+    return "止损触发";
+  }
+
+  return "未知触发";
+}
+
 function pnlClass(value: number): string {
   return value >= 0 ? "text-red-600" : "text-emerald-600";
 }
@@ -46,14 +74,20 @@ export function PaperTradingPanel() {
   const [snapshot, setSnapshot] = useState<SnapshotState | null>(null);
   const [symbol, setSymbol] = useState("BTCUSDT");
   const [side, setSide] = useState<TradingSide>("buy");
+  const [orderType, setOrderType] = useState<OrderType>("market");
   const [quantity, setQuantity] = useState("0.01");
+  const [limitPrice, setLimitPrice] = useState("");
+  const [takeProfitPrice, setTakeProfitPrice] = useState("");
+  const [stopLossPrice, setStopLossPrice] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  async function refreshAccount() {
+  async function refreshAccount(options?: { keepNotice?: boolean }) {
     setIsLoading(true);
-    setNotice(null);
+    if (!options?.keepNotice) {
+      setNotice(null);
+    }
 
     try {
       const response = await fetch("/api/paper/account?limit=20", {
@@ -69,8 +103,10 @@ export function PaperTradingPanel() {
       const data = (await response.json()) as PaperAccountResponse;
       setSnapshot({
         account: data.account,
+        pendingOrders: data.pendingOrders,
         recentTrades: data.recentTrades,
-        marketErrors: data.marketErrors
+        marketErrors: data.marketErrors,
+        events: data.events
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "读取账户时发生未知错误。";
@@ -102,6 +138,12 @@ export function PaperTradingPanel() {
       return;
     }
 
+    const parsedLimitPrice = Number(limitPrice);
+    if (orderType === "limit" && (!Number.isFinite(parsedLimitPrice) || parsedLimitPrice <= 0)) {
+      setNotice("限价单必须填写有效的限价价格。");
+      return;
+    }
+
     setIsSubmitting(true);
     setNotice(null);
 
@@ -114,7 +156,11 @@ export function PaperTradingPanel() {
         body: JSON.stringify({
           symbol: normalizedSymbol,
           side,
-          quantity: parsedQuantity
+          orderType,
+          quantity: parsedQuantity,
+          limitPriceUsd: orderType === "limit" ? parsedLimitPrice : undefined,
+          takeProfitPriceUsd: Number.isFinite(Number(takeProfitPrice)) && Number(takeProfitPrice) > 0 ? Number(takeProfitPrice) : undefined,
+          stopLossPriceUsd: Number.isFinite(Number(stopLossPrice)) && Number(stopLossPrice) > 0 ? Number(stopLossPrice) : undefined
         })
       });
 
@@ -124,16 +170,8 @@ export function PaperTradingPanel() {
       }
 
       const data = (await response.json()) as PaperOrderResponse;
-
-      setSnapshot((prev) => ({
-        account: data.account,
-        recentTrades: [data.trade, ...(prev?.recentTrades ?? [])].slice(0, 20),
-        marketErrors: data.marketErrors
-      }));
-
-      setNotice(
-        `${sideLabel(data.trade.side)} 成功：${data.trade.symbol} x ${formatQty(data.trade.quantity)}，成交价 ${formatUsd(data.trade.priceUsd)}`
-      );
+      await refreshAccount({ keepNotice: true });
+      setNotice(data.message);
     } catch (error) {
       const message = error instanceof Error ? error.message : "下单时发生未知错误。";
       setNotice(`下单失败：${message}`);
@@ -146,13 +184,23 @@ export function PaperTradingPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-[1.2fr_auto_1fr_auto_auto]">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
         <Input
           value={symbol}
           onChange={(event) => setSymbol(event.target.value)}
           placeholder="交易对，例如 BTCUSDT"
           disabled={isSubmitting}
         />
+
+        <select
+          value={orderType}
+          onChange={(event) => setOrderType(event.target.value as OrderType)}
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          disabled={isSubmitting}
+        >
+          <option value="market">市价单</option>
+          <option value="limit">限价单</option>
+        </select>
 
         <select
           value={side}
@@ -171,15 +219,38 @@ export function PaperTradingPanel() {
           disabled={isSubmitting}
         />
 
-        <Button onClick={submitOrder} disabled={isSubmitting || isLoading}>
-          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          执行{side === "buy" ? "买入" : "卖出"}
-        </Button>
+        <Input
+          value={limitPrice}
+          onChange={(event) => setLimitPrice(event.target.value)}
+          placeholder={orderType === "limit" ? "限价（必填）" : "限价（选填）"}
+          disabled={isSubmitting || orderType !== "limit"}
+        />
 
-        <Button onClick={refreshAccount} variant="secondary" disabled={isSubmitting || isLoading}>
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
-          刷新
-        </Button>
+        <Input
+          value={takeProfitPrice}
+          onChange={(event) => setTakeProfitPrice(event.target.value)}
+          placeholder="止盈价（选填）"
+          disabled={isSubmitting}
+        />
+
+        <Input
+          value={stopLossPrice}
+          onChange={(event) => setStopLossPrice(event.target.value)}
+          placeholder="止损价（选填）"
+          disabled={isSubmitting}
+        />
+
+        <div className="xl:col-span-2 flex gap-2">
+          <Button onClick={submitOrder} disabled={isSubmitting || isLoading}>
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            执行{side === "buy" ? "买入" : "卖出"}
+          </Button>
+
+          <Button onClick={() => refreshAccount()} variant="secondary" disabled={isSubmitting || isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
+            同步行情与触发
+          </Button>
+        </div>
       </div>
 
       {notice ? (
@@ -191,6 +262,12 @@ export function PaperTradingPanel() {
       {snapshot?.marketErrors && snapshot.marketErrors.length > 0 ? (
         <Badge variant="outline" className="max-w-full break-all py-1 text-amber-700 border-amber-500">
           行情提示：{snapshot.marketErrors.join("; ")}
+        </Badge>
+      ) : null}
+
+      {snapshot?.events && snapshot.events.length > 0 ? (
+        <Badge variant="outline" className="max-w-full break-all py-1 border-blue-500 text-blue-700">
+          触发事件：{snapshot.events.join("; ")}
         </Badge>
       ) : null}
 
@@ -250,6 +327,37 @@ export function PaperTradingPanel() {
                     <p className="text-xs text-muted-foreground">
                       成本 {formatUsd(position.averageEntryPriceUsd)} | 最新价 {formatUsd(position.lastPriceUsd)} | 市值 {formatUsd(position.marketValueUsd)}
                     </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {position.takeProfitPriceUsd ? `止盈 ${formatUsd(position.takeProfitPriceUsd)}` : "未设置止盈"}
+                      {" | "}
+                      {position.stopLossPriceUsd ? `止损 ${formatUsd(position.stopLossPriceUsd)}` : "未设置止损"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2 rounded-lg border bg-background/70 p-4">
+            <p className="text-sm font-medium">限价挂单</p>
+            {snapshot.pendingOrders.length === 0 ? (
+              <p className="text-sm text-muted-foreground">暂无限价挂单。</p>
+            ) : (
+              <div className="space-y-2">
+                {snapshot.pendingOrders.map((order) => (
+                  <div key={order.id} className="rounded-md border p-3">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <Badge variant="outline">{order.symbol}</Badge>
+                      <Badge variant="outline">{orderTypeLabel("limit")}</Badge>
+                      <Badge variant="outline">{sideLabel(order.side)}</Badge>
+                      <Badge variant="outline">数量 {formatQty(order.quantity)}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      限价 {formatUsd(order.limitPriceUsd)}
+                      {order.takeProfitPriceUsd ? ` | 止盈 ${formatUsd(order.takeProfitPriceUsd)}` : ""}
+                      {order.stopLossPriceUsd ? ` | 止损 ${formatUsd(order.stopLossPriceUsd)}` : ""}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{formatTime(order.createdAt)}</p>
                   </div>
                 ))}
               </div>
@@ -266,7 +374,9 @@ export function PaperTradingPanel() {
                   <div key={trade.id} className="rounded-md border p-3">
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                       <Badge variant="outline">{trade.symbol}</Badge>
+                      <Badge variant="outline">{orderTypeLabel(trade.orderType)}</Badge>
                       <Badge variant="outline">{sideLabel(trade.side)}</Badge>
+                      <Badge variant="outline">{triggerLabel(trade.trigger)}</Badge>
                       <Badge variant="outline">{formatQty(trade.quantity)}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">

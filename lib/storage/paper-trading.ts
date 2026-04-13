@@ -2,14 +2,17 @@ import path from "node:path";
 
 import {
   paperAccountStateSchema,
+  paperPendingOrderSchema,
   paperTradeSchema,
   type PaperAccountState,
+  type PaperPendingOrder,
   type PaperTrade
 } from "@/lib/schemas/paper-trading";
 import { appendJsonl, dataPaths, readJsonFile, readTextFile, writeJsonFile } from "@/lib/storage/file-store";
 
 const paperAccountPath = path.join(dataPaths.trading, "paper-account.json");
 const paperOrdersPath = path.join(dataPaths.trading, "paper-orders.jsonl");
+const paperPendingOrdersPath = path.join(dataPaths.trading, "paper-pending-orders.json");
 
 function buildDefaultAccountState(): PaperAccountState {
   const now = new Date().toISOString();
@@ -60,4 +63,21 @@ export async function listPaperTrades(limit = 30): Promise<PaperTrade[]> {
 
   const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.floor(limit)) : 30;
   return parsed.slice(0, safeLimit);
+}
+
+export async function readPaperPendingOrders(): Promise<PaperPendingOrder[]> {
+  const raw = await readJsonFile<unknown>(paperPendingOrdersPath, []);
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw.flatMap((item) => {
+    const parsed = paperPendingOrderSchema.safeParse(item);
+    return parsed.success ? [parsed.data] : [];
+  });
+}
+
+export async function writePaperPendingOrders(orders: PaperPendingOrder[]): Promise<void> {
+  const payload = orders.map((item) => paperPendingOrderSchema.parse(item));
+  await writeJsonFile(paperPendingOrdersPath, payload);
 }
