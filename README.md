@@ -17,6 +17,21 @@ cp .env.example .env.local
 pnpm dev
 ```
 
+## AIHubMix 接入（OpenAI 兼容）
+根据官方文档，AIHubMix 支持 OpenAI 兼容接口。当前项目已支持通过环境变量切换。
+
+在 `.env.local` 中配置：
+
+```bash
+AIHUBMIX_API_KEY=你的_aihubmix_key
+OPENAI_BASE_URL=https://aihubmix.com/v1
+OPENAI_MODEL=gpt-4o-mini
+```
+
+说明：
+- 若同时配置 `AIHUBMIX_API_KEY` 与 `OPENAI_API_KEY`，会优先使用 `AIHUBMIX_API_KEY`
+- 若未配置 `OPENAI_BASE_URL`，默认走 OpenAI 官方地址
+
 ## 开发检查
 ```bash
 pnpm lint
