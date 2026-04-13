@@ -2,6 +2,8 @@
 
 import { useState, useId, type FormEvent } from "react";
 import { Loader2, Send } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +18,7 @@ interface ChatMessage {
 }
 
 function roleLabel(role: ChatRole): string {
-  return role === "user" ? "用户" : "助手";
+  return role === "user" ? "User" : "Alice";
 }
 
 const seedMessages: ChatMessage[] = [
@@ -92,12 +94,18 @@ export function ChatPanel() {
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <p className="mb-1 text-[11px] uppercase tracking-[0.2em] opacity-70">{roleLabel(message.role)}</p>
-              <p className="whitespace-pre-wrap">{message.content}</p>
+              {message.role === "assistant" ? (
+                <div className="chat-markdown">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                </div>
+              ) : (
+                <p className="whitespace-pre-wrap break-words">{message.content}</p>
+              )}
             </div>
           ))}
           {isLoading && (
             <div className="max-w-[92%] border bg-background/80 rounded-2xl px-4 py-3 text-sm leading-6 animate-fade-in-up">
-              <p className="mb-1 text-[11px] uppercase tracking-[0.2em] opacity-70">助手</p>
+              <p className="mb-1 text-[11px] uppercase tracking-[0.2em] opacity-70">Alice</p>
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 <span>正在分析...</span>
