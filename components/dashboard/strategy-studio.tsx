@@ -79,7 +79,7 @@ export function StrategyStudio() {
 
       const data = (await response.json()) as TradingExecuteResult;
       setResult(data);
-      setNotice("策略已执行：系统已自动完成记录与交易流水。请查看下方执行结果。\n");
+      setNotice("策略已执行。\n");
       router.refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : "策略执行出现未知错误。";

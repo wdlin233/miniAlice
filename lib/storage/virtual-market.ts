@@ -14,56 +14,56 @@ const defaultVirtualMarketConfig = virtualMarketConfigSchema.parse({
     {
       symbol: "BTCUSDT",
       anchorPrice: referencePriceBySymbol.BTCUSDT,
-      dailyChangePercent: 1.4,
-      dailyRangePercent: 3.2,
+      dailyChangePercent: 2.8,
+      dailyRangePercent: 8.8,
       volume24h: 1250000000,
       phaseOffset: 22
     },
     {
       symbol: "ETHUSDT",
       anchorPrice: referencePriceBySymbol.ETHUSDT,
-      dailyChangePercent: 0.9,
-      dailyRangePercent: 3.6,
+      dailyChangePercent: 1.7,
+      dailyRangePercent: 10.4,
       volume24h: 820000000,
       phaseOffset: 75
     },
     {
       symbol: "SOLUSDT",
       anchorPrice: referencePriceBySymbol.SOLUSDT,
-      dailyChangePercent: 2.1,
-      dailyRangePercent: 5.8,
+      dailyChangePercent: 3.9,
+      dailyRangePercent: 15.5,
       volume24h: 460000000,
       phaseOffset: 145
     },
     {
       symbol: "BNBUSDT",
       anchorPrice: referencePriceBySymbol.BNBUSDT,
-      dailyChangePercent: 0.4,
-      dailyRangePercent: 2.5,
+      dailyChangePercent: 1.2,
+      dailyRangePercent: 7.4,
       volume24h: 260000000,
       phaseOffset: 188
     },
     {
       symbol: "XRPUSDT",
       anchorPrice: referencePriceBySymbol.XRPUSDT,
-      dailyChangePercent: -0.7,
-      dailyRangePercent: 4.7,
+      dailyChangePercent: -1.4,
+      dailyRangePercent: 12.8,
       volume24h: 390000000,
       phaseOffset: 236
     },
     {
       symbol: "ADAUSDT",
       anchorPrice: referencePriceBySymbol.ADAUSDT,
-      dailyChangePercent: 0.6,
-      dailyRangePercent: 4.1,
+      dailyChangePercent: 1.1,
+      dailyRangePercent: 11.6,
       volume24h: 240000000,
       phaseOffset: 281
     },
     {
       symbol: "DOGEUSDT",
       anchorPrice: referencePriceBySymbol.DOGEUSDT,
-      dailyChangePercent: 1.1,
-      dailyRangePercent: 6.2,
+      dailyChangePercent: 2.3,
+      dailyRangePercent: 16.8,
       volume24h: 310000000,
       phaseOffset: 329
     }
@@ -80,4 +80,9 @@ export async function readVirtualMarketConfig(): Promise<VirtualMarketConfig> {
 
   await writeJsonFile(virtualMarketPath, defaultVirtualMarketConfig);
   return defaultVirtualMarketConfig;
+}
+
+export async function writeVirtualMarketConfig(config: VirtualMarketConfig): Promise<void> {
+  const payload = virtualMarketConfigSchema.parse(config);
+  await writeJsonFile(virtualMarketPath, payload);
 }

@@ -175,6 +175,12 @@ function getCacheStale<T>(target: Map<string, CacheEntry<T>>, key: string): T | 
   return null;
 }
 
+export function clearBrowserCaches(): void {
+  marketCache.clear();
+  newsCache.clear();
+  combinedCache.clear();
+}
+
 async function fetchWithTimeout(
   url: string,
   requestTimeoutMs: number,

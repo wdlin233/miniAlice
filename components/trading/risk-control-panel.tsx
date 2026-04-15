@@ -162,7 +162,7 @@ export function RiskControlPanel() {
 
       const data = (await response.json()) as TradingRiskResult;
       setResult(data);
-      setNotice(`风险评估完成：${data.decision.toUpperCase()} (score ${data.score})`);
+      setNotice(`评估结果：${data.decision.toUpperCase()} (score ${data.score})`);
 
       const historyResponse = await fetch("/api/trading/risk/history?limit=8", {
         method: "GET",

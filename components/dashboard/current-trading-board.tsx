@@ -103,15 +103,34 @@ export async function CurrentTradingBoard() {
     <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">当前交易看板</CardTitle>
-        <CardDescription>与模拟盘同一账本，展示持仓与策略执行事件</CardDescription>
+        <CardDescription>展示持仓、成交与策略执行记录。</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-5">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline">活跃交易对：{positions.length}</Badge>
-          <Badge variant="outline">持仓市值：{formatUsd(positionValueUsd)}</Badge>
-          <Badge variant="outline">账户权益：{formatUsd(equityUsd)}</Badge>
-          <Badge variant="outline">总盈亏：{formatUsd(totalPnlUsd)}</Badge>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border bg-background/70 p-4">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">活跃持仓</p>
+            <p className="mt-2 text-2xl font-semibold">{positions.length}</p>
+            <p className="mt-2 text-xs text-muted-foreground">有持仓的交易对数量</p>
+          </div>
+          <div className="rounded-xl border bg-background/70 p-4">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">持仓市值</p>
+            <p className="mt-2 text-2xl font-semibold">{formatUsd(positionValueUsd)}</p>
+            <p className="mt-2 text-xs text-muted-foreground">按最新价格计算</p>
+          </div>
+          <div className="rounded-xl border bg-background/70 p-4">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">账户权益</p>
+            <p className="mt-2 text-2xl font-semibold">{formatUsd(equityUsd)}</p>
+            <p className="mt-2 text-xs text-muted-foreground">现金与持仓市值合计</p>
+          </div>
+          <div className="rounded-xl border bg-background/70 p-4">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">累计盈亏</p>
+            <p className={`mt-2 text-2xl font-semibold ${pnlClass(totalPnlUsd)}`}>
+              {totalPnlUsd >= 0 ? "+" : "-"}
+              {formatUsd(Math.abs(totalPnlUsd))}
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">相对初始资金的变化</p>
+          </div>
         </div>
 
         <div className="overflow-x-auto rounded-md border">

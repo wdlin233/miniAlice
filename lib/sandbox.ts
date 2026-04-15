@@ -250,11 +250,7 @@ export class Sandbox {
   // 加载沙箱状态
   async loadState(): Promise<void> {
     const statePath = path.join(this.sandboxPath, "state.json");
-    const state = await readJsonFile<SandboxState>(statePath, {
-      playheadTime: new Date().toISOString(),
-      wallet: { staging: undefined, commits: [] },
-      sessions: {},
-    });
+    const state = await readJsonFile<SandboxState>(statePath, this.state);
 
     this.state = state;
     this.playheadTime = new Date(state.playheadTime);
@@ -279,6 +275,7 @@ export class Sandbox {
 export async function createSandbox(sandboxId?: string): Promise<Sandbox> {
   const sandbox = new Sandbox(sandboxId);
   await sandbox.initializeFromRealState();
+  await sandbox.saveState();
   return sandbox;
 }
 

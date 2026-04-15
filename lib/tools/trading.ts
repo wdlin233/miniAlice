@@ -204,7 +204,10 @@ function evaluateRuleSet(context: TradingRiskContext): RuleEvaluation[] {
   return evaluations;
 }
 
-export async function evaluateTradingRisk(input: TradingRiskRequest): Promise<TradingRiskResult> {
+export async function evaluateTradingRisk(
+  input: TradingRiskRequest,
+  options?: { persistLog?: boolean }
+): Promise<TradingRiskResult> {
   const config = await readTradingRiskConfig();
 
   const proposedExposurePercent = round2((input.notionalUsd / input.accountEquityUsd) * 100);
@@ -248,7 +251,10 @@ export async function evaluateTradingRisk(input: TradingRiskRequest): Promise<Tr
     recommendations
   });
 
-  await appendTradingRiskLogSafe(result, input);
+  if (options?.persistLog !== false) {
+    await appendTradingRiskLogSafe(result, input);
+  }
+
   return result;
 }
 

@@ -37,7 +37,7 @@ export async function replayTradingRiskValidation(
 
   const items = await Promise.all(
     candidates.map(async (order) => {
-      const replayed = await evaluateTradingRisk(order.riskRequest!);
+      const replayed = await evaluateTradingRisk(order.riskRequest!, { persistLog: false });
 
       return {
         orderId: order.id,

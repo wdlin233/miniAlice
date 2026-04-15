@@ -48,7 +48,7 @@ export function SandboxReplayPanel() {
       }
 
       setSandboxId(data.data.sandboxId);
-      setNotice(`已创建 Sandbox：${data.data.sandboxId}。可直接点击“回放验证”检查当前 playheadTime 之前的历史风控结果。`);
+      setNotice(`Sandbox 已创建：${data.data.sandboxId}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown sandbox create error.";
       setNotice(`创建失败：${message}`);
@@ -98,9 +98,8 @@ export function SandboxReplayPanel() {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
-        用法：1. 创建 Sandbox；2. 如需历史回放，可先通过 Sandbox API 调整 playheadTime；3. 点击“回放验证”。系统会重放{" "}
-        <code>data/trading/orders.jsonl</code> 中创建时间早于 playheadTime、且带有 <code>riskRequest</code>{" "}
-        的订单，并比较原始风控结果与当前规则计算结果是否一致。
+        回放范围为 <code>data/trading/orders.jsonl</code> 中创建时间早于 playheadTime、且带有{" "}
+        <code>riskRequest</code> 的订单。
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -144,9 +143,7 @@ export function SandboxReplayPanel() {
           </div>
 
           {result.total === 0 ? (
-            <p className="text-xs text-muted-foreground">
-              当前 sandbox playheadTime 之前没有可回放订单。通常需要先产生带风控记录的交易单，或把 playheadTime 调整到更晚的时间。
-            </p>
+            <p className="text-xs text-muted-foreground">当前时间点之前没有可回放订单。</p>
           ) : null}
 
           <div className="space-y-2">
