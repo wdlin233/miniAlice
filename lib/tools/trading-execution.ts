@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 
+import { referencePriceBySymbol } from "@/lib/market/reference-prices";
 import {
   tradingExecuteInputSchema,
   tradingExecuteResultSchema,
@@ -17,14 +18,6 @@ import { generatePositionRecommendation } from "@/lib/tools/trading-recommendati
 import { placePaperOrder } from "@/lib/tools/paper-trading";
 import { placeTradingOrder } from "@/lib/tools/trading-order";
 import type { WalletCommit } from "@/types/domain";
-
-const staticReferencePriceBySymbol: Record<string, number> = {
-  BTCUSDT: 68000,
-  ETHUSDT: 3200,
-  SOLUSDT: 150,
-  BNBUSDT: 600,
-  XRPUSDT: 0.6
-};
 
 function inferSymbolFromText(text: string): string {
   const symbolMatch = text.toUpperCase().match(/\b([A-Z]{2,10}(?:USDT|USD|PERP))\b/);
@@ -112,7 +105,7 @@ async function resolveReferencePrice(symbol: string): Promise<number> {
     return positionPrice;
   }
 
-  return staticReferencePriceBySymbol[normalizedSymbol] ?? 0;
+  return referencePriceBySymbol[normalizedSymbol] ?? 0;
 }
 
 async function mirrorSubmittedOrderToPaper(order: TradingOrder): Promise<string | undefined> {

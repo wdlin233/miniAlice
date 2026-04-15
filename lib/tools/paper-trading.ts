@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 
+import { referencePriceBySymbol } from "@/lib/market/reference-prices";
 import {
   paperAccountResponseSchema,
   paperAccountViewSchema,
@@ -28,15 +29,6 @@ import {
 } from "@/lib/storage/paper-trading";
 
 const PAPER_FEE_RATE = 0.001;
-const SECONDARY_REQUEST_TIMEOUT_MS = 2500;
-
-const staticReferencePriceBySymbol: Record<string, number> = {
-  BTCUSDT: 68000,
-  ETHUSDT: 3200,
-  SOLUSDT: 150,
-  BNBUSDT: 600,
-  XRPUSDT: 0.6
-};
 
 interface QuoteLookupResult {
   prices: Map<string, number>;
@@ -61,80 +53,6 @@ function round(value: number): number {
 
 function round2(value: number): number {
   return Number(value.toFixed(2));
-}
-
-function extractBaseAsset(symbol: string): string {
-  const normalized = normalizeSymbol(symbol);
-  if (normalized.endsWith("USDT")) {
-    return normalized.slice(0, -4);
-  }
-
-  if (normalized.endsWith("USD")) {
-    return normalized.slice(0, -3);
-  }
-
-  return normalized;
-}
-
-async function fetchJsonWithTimeout(url: string): Promise<unknown> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), SECONDARY_REQUEST_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      cache: "no-store",
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "MiniAlice/1.0"
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`status ${response.status}`);
-    }
-
-    return await response.json();
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function fetchSecondaryPrice(symbol: string): Promise<number | null> {
-  const base = extractBaseAsset(symbol);
-
-  const okxSymbol = `${base}-USDT`;
-  try {
-    const payload = (await fetchJsonWithTimeout(
-      `https://www.okx.com/api/v5/market/ticker?instId=${encodeURIComponent(okxSymbol)}`
-    )) as {
-      data?: Array<{ last?: string }>;
-    };
-
-    const price = Number(payload.data?.[0]?.last);
-    if (Number.isFinite(price) && price > 0) {
-      return price;
-    }
-  } catch {
-    // Try next source.
-  }
-
-  try {
-    const payload = (await fetchJsonWithTimeout(
-      `https://api.coinbase.com/v2/prices/${encodeURIComponent(base)}-USD/spot`
-    )) as {
-      data?: { amount?: string };
-    };
-
-    const price = Number(payload.data?.amount);
-    if (Number.isFinite(price) && price > 0) {
-      return price;
-    }
-  } catch {
-    // Try next source.
-  }
-
-  return null;
 }
 
 async function fetchQuoteMap(symbols: string[]): Promise<QuoteLookupResult> {
@@ -168,26 +86,20 @@ async function resolveExecutionPrice(
     return { priceUsd: priceFromPrimary, warnings };
   }
 
-  const secondaryPrice = await fetchSecondaryPrice(symbol);
-  if (secondaryPrice && Number.isFinite(secondaryPrice) && secondaryPrice > 0) {
-    warnings.push(`主行情源不可用，已切换备用行情源执行 ${symbol}。`);
-    return { priceUsd: secondaryPrice, warnings };
-  }
-
   const storedPrice = account.positions.find((item) => normalizeSymbol(item.symbol) === normalized)?.lastPriceUsd;
   if (storedPrice && Number.isFinite(storedPrice) && storedPrice > 0) {
-    warnings.push(`实时行情暂不可用，已使用账户内最近价格执行 ${symbol}。`);
+    warnings.push(`虚拟行情未覆盖 ${symbol}，已使用账户内最近价格执行。`);
     return { priceUsd: storedPrice, warnings };
   }
 
-  const staticPrice = staticReferencePriceBySymbol[normalized];
+  const staticPrice = referencePriceBySymbol[normalized];
   if (staticPrice && Number.isFinite(staticPrice) && staticPrice > 0) {
-    warnings.push(`实时行情暂不可用，已使用参考价格执行 ${symbol}。`);
+    warnings.push(`虚拟行情未覆盖 ${symbol}，已使用内置参考价格执行。`);
     return { priceUsd: staticPrice, warnings };
   }
 
   throw new Error(
-    `未获取到 ${symbol} 的实时行情，无法下单。${warnings.length > 0 ? `详情：${warnings.join("; ")}` : ""}`
+    `未获取到 ${symbol} 的虚拟行情，无法下单。${warnings.length > 0 ? `详情：${warnings.join("; ")}` : ""}`
   );
 }
 

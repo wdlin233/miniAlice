@@ -8,6 +8,7 @@ export const browserSymbolSchema = z
   .regex(/^[A-Za-z0-9/_-]+$/, "symbol contains unsupported characters");
 
 export const browserNewsSourceSchema = z.enum(["cryptocompare", "reddit"]);
+export const browserMarketDataModeSchema = z.enum(["virtual", "remote"]);
 
 export const browserMarketRequestSchema = z.object({
   symbols: z.array(browserSymbolSchema).min(1).max(10).optional()
@@ -26,11 +27,12 @@ export const browserRefreshRequestSchema = z.object({
 
 export const browserConfigSchema = z.object({
   defaultSymbols: z.array(browserSymbolSchema).min(1).max(10).default(["BTCUSDT", "ETHUSDT"]),
+  marketDataMode: browserMarketDataModeSchema.default("virtual"),
   newsLimit: z.number().int().min(1).max(20).default(5),
   requestTimeoutMs: z.number().int().min(500).max(15000).default(2500),
-  marketCacheTtlMs: z.number().int().min(1000).max(120000).default(15000),
+  marketCacheTtlMs: z.number().int().min(1000).max(120000).default(2000),
   newsCacheTtlMs: z.number().int().min(1000).max(120000).default(20000),
-  combinedCacheTtlMs: z.number().int().min(1000).max(120000).default(10000),
+  combinedCacheTtlMs: z.number().int().min(1000).max(120000).default(2000),
   marketEndpoint: z.string().url().default("https://api.binance.com/api/v3/ticker/24hr"),
   defaultNewsSource: browserNewsSourceSchema.default("cryptocompare"),
   newsEndpoints: z
@@ -64,6 +66,7 @@ export const browserNewsItemSchema = z.object({
 
 export const browserMarketSnapshotSchema = z.object({
   tool: z.literal("browser"),
+  mode: browserMarketDataModeSchema,
   quotes: z.array(browserMarketQuoteSchema),
   errors: z.array(z.string()),
   fetchedAt: z.string()
@@ -86,6 +89,7 @@ export const browserCombinedSnapshotSchema = z.object({
 
 export type BrowserConfig = z.infer<typeof browserConfigSchema>;
 export type BrowserNewsSource = z.infer<typeof browserNewsSourceSchema>;
+export type BrowserMarketDataMode = z.infer<typeof browserMarketDataModeSchema>;
 export type BrowserMarketRequest = z.infer<typeof browserMarketRequestSchema>;
 export type BrowserNewsRequest = z.infer<typeof browserNewsRequestSchema>;
 export type BrowserRefreshRequest = z.infer<typeof browserRefreshRequestSchema>;

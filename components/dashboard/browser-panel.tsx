@@ -30,6 +30,10 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "刷新时发生未知错误。";
 }
 
+function marketModeLabel(mode: BrowserMarketSnapshot["mode"] | undefined): string {
+  return mode === "remote" ? "实时行情" : "虚拟盘行情";
+}
+
 export function BrowserPanel({ initialMarketSnapshot, initialNewsSnapshot }: BrowserPanelProps) {
   const [marketSnapshot, setMarketSnapshot] = useState<BrowserMarketSnapshot | null>(initialMarketSnapshot);
   const [newsSnapshot, setNewsSnapshot] = useState<BrowserNewsSnapshot | null>(initialNewsSnapshot);
@@ -108,7 +112,9 @@ export function BrowserPanel({ initialMarketSnapshot, initialNewsSnapshot }: Bro
       const data = (await response.json()) as BrowserCombinedSnapshot;
       setMarketSnapshot(data.market);
       setNewsSnapshot(data.news);
-      setNotice(`市场浏览器已刷新：${new Date(data.refreshedAt).toLocaleTimeString()}`);
+      setNotice(
+        `${data.market.mode === "remote" ? "市场浏览器已刷新" : "虚拟市场已刷新"}：${new Date(data.refreshedAt).toLocaleTimeString()}`
+      );
     } catch (error) {
       setNotice(`刷新失败：${getErrorMessage(error)}`);
     } finally {
@@ -150,7 +156,10 @@ export function BrowserPanel({ initialMarketSnapshot, initialNewsSnapshot }: Bro
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">市场快照</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">市场快照</p>
+            <Badge variant="secondary">{marketModeLabel(marketSnapshot?.mode)}</Badge>
+          </div>
           {marketSnapshot && marketSnapshot.quotes.length > 0 ? (
             <div className="space-y-2">
               {marketSnapshot.quotes.map((quote) => (
@@ -169,8 +178,11 @@ export function BrowserPanel({ initialMarketSnapshot, initialNewsSnapshot }: Bro
                   </p>
                 </div>
               ))}
+              <p className="text-xs text-muted-foreground">
+                更新时间：{new Date(marketSnapshot.fetchedAt).toLocaleString()}
+              </p>
               {marketSnapshot.errors.length > 0 ? (
-                <p className="text-xs text-muted-foreground">部分行情源失败：{marketSnapshot.errors.join("; ")}</p>
+                <p className="text-xs text-muted-foreground">行情提示：{marketSnapshot.errors.join("; ")}</p>
               ) : null}
             </div>
           ) : (

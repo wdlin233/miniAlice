@@ -97,7 +97,7 @@ export async function DashboardPanel() {
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">市场浏览器</CardTitle>
-          <CardDescription>客户端异步抓取行情与资讯，避免阻塞首页首屏</CardDescription>
+          <CardDescription>客户端异步读取虚拟行情与资讯，避免阻塞首页首屏</CardDescription>
         </CardHeader>
         <CardContent>
           <BrowserPanel initialMarketSnapshot={null} initialNewsSnapshot={null} />

@@ -74,3 +74,5 @@ data/
 - [x] Week 5: 交互改版（隐藏手动 Git 操作细节）
 - [x] Week 5: Chat + 当前交易看板（简化 OpenAlice 风格）
 - [x] Week 5: 一键策略执行入口（自动串联执行流水）
+- [x] Week 5: Browser / Paper Trading 切换虚拟行情模式 + 沙箱回放说明补充
+- [x] Week 5: 演示模式下调虚拟行情缓存时间（2s）

@@ -48,7 +48,7 @@ export function SandboxReplayPanel() {
       }
 
       setSandboxId(data.data.sandboxId);
-      setNotice(`Sandbox created: ${data.data.sandboxId}`);
+      setNotice(`已创建 Sandbox：${data.data.sandboxId}。可直接点击“回放验证”检查当前 playheadTime 之前的历史风控结果。`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown sandbox create error.";
       setNotice(`创建失败：${message}`);
@@ -97,6 +97,12 @@ export function SandboxReplayPanel() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
+        用法：1. 创建 Sandbox；2. 如需历史回放，可先通过 Sandbox API 调整 playheadTime；3. 点击“回放验证”。系统会重放{" "}
+        <code>data/trading/orders.jsonl</code> 中创建时间早于 playheadTime、且带有 <code>riskRequest</code>{" "}
+        的订单，并比较原始风控结果与当前规则计算结果是否一致。
+      </div>
+
       <div className="grid gap-3 md:grid-cols-3">
         <Input
           value={sandboxId}
@@ -106,7 +112,7 @@ export function SandboxReplayPanel() {
         <Input
           value={limit}
           onChange={(event) => setLimit(event.target.value)}
-          placeholder="Replay limit"
+          placeholder="回放条数"
         />
         <div className="flex gap-2">
           <Button onClick={createSandbox} disabled={isCreating} variant="secondary" className="w-full">
@@ -137,6 +143,12 @@ export function SandboxReplayPanel() {
             Total: {result.total} | Matched: {result.matched} | Mismatched: {result.mismatched}
           </div>
 
+          {result.total === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              当前 sandbox playheadTime 之前没有可回放订单。通常需要先产生带风控记录的交易单，或把 playheadTime 调整到更晚的时间。
+            </p>
+          ) : null}
+
           <div className="space-y-2">
             {result.items.map((item) => (
               <div key={item.orderId} className="rounded-md border p-2">
@@ -153,6 +165,7 @@ export function SandboxReplayPanel() {
                 <p className="text-xs text-muted-foreground">
                   original: {item.originalDecision}({item.originalScore}) | replayed: {item.replayedDecision}({item.replayedScore})
                 </p>
+                <p className="mt-1 text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString()}</p>
               </div>
             ))}
           </div>

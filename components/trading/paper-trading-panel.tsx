@@ -184,6 +184,10 @@ export function PaperTradingPanel() {
 
   return (
     <div className="space-y-4">
+      <Badge variant="outline" className="max-w-full break-all border-sky-500 py-1 text-sky-700">
+        当前使用本地虚拟行情，不连接真实交易所接口。手动刷新会更新虚拟价格并检查限价/止盈/止损触发。
+      </Badge>
+
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
         <Input
           value={symbol}
@@ -248,7 +252,7 @@ export function PaperTradingPanel() {
 
           <Button onClick={() => refreshAccount()} variant="secondary" disabled={isSubmitting || isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
-            同步行情与触发
+            刷新虚拟行情与触发
           </Button>
         </div>
       </div>

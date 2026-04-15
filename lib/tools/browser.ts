@@ -2,6 +2,7 @@ import path from "node:path";
 
 import {
   browserCombinedSnapshotSchema,
+  browserMarketDataModeSchema,
   browserRefreshRequestSchema,
   browserMarketRequestSchema,
   browserMarketQuoteSchema,
@@ -20,8 +21,10 @@ import {
   type BrowserMarketSnapshot,
   type BrowserNewsSnapshot
 } from "@/lib/schemas/browser";
+import { referencePriceBySymbol } from "@/lib/market/reference-prices";
 import { dataPaths, readJsonFile } from "@/lib/storage/file-store";
 import { readBrowserConfig } from "@/lib/storage/browser-config";
+import { buildVirtualMarketSnapshot } from "@/lib/tools/virtual-market";
 
 interface BinanceTickerResponse {
   symbol?: string;
@@ -101,13 +104,6 @@ const newsCache = new Map<string, CacheEntry<BrowserNewsSnapshot>>();
 const combinedCache = new Map<string, CacheEntry<BrowserCombinedSnapshot>>();
 
 const paperAccountPath = path.join(dataPaths.trading, "paper-account.json");
-const staticReferencePriceBySymbol: Record<string, number> = {
-  BTCUSDT: 68000,
-  ETHUSDT: 3200,
-  SOLUSDT: 150,
-  BNBUSDT: 600,
-  XRPUSDT: 0.6
-};
 
 function normalizeSymbol(symbol: string): string {
   return symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -376,7 +372,7 @@ async function buildLocalFallbackQuotes(symbols: string[]): Promise<BrowserMarke
 
   return symbols.flatMap((symbol) => {
     const normalized = normalizeSymbol(symbol);
-    const price = localPriceMap.get(normalized) ?? staticReferencePriceBySymbol[normalized] ?? 0;
+    const price = localPriceMap.get(normalized) ?? referencePriceBySymbol[normalized] ?? 0;
 
     if (!Number.isFinite(price) || price <= 0) {
       return [];
@@ -399,16 +395,23 @@ async function buildLocalFallbackQuotes(symbols: string[]): Promise<BrowserMarke
 export async function fetchMarketSnapshot(input?: BrowserMarketRequest): Promise<BrowserMarketSnapshot> {
   const config = await readBrowserConfig();
   const validatedInput = browserMarketRequestSchema.parse(input ?? {});
+  const marketMode = browserMarketDataModeSchema.parse(config.marketDataMode);
 
   const symbols = (validatedInput.symbols ?? config.defaultSymbols)
     .map((item) => normalizeSymbol(item))
     .filter((item, index, items) => item.length > 0 && items.indexOf(item) === index)
     .slice(0, 10);
 
-  const cacheKey = `market:${config.marketEndpoint}:${symbols.join(",")}`;
+  const cacheKey = `market:${marketMode}:${config.marketEndpoint}:${symbols.join(",")}`;
   const cached = getCacheFresh(marketCache, cacheKey);
   if (cached) {
     return cached;
+  }
+
+  if (marketMode === "virtual") {
+    const snapshot = await buildVirtualMarketSnapshot(symbols);
+    setCache(marketCache, cacheKey, snapshot, config.marketCacheTtlMs);
+    return snapshot;
   }
 
   const settled = await Promise.allSettled(
@@ -442,12 +445,13 @@ export async function fetchMarketSnapshot(input?: BrowserMarketRequest): Promise
     const localFallbackQuotes = await buildLocalFallbackQuotes(symbols);
     if (localFallbackQuotes.length > 0) {
       quotes.push(...localFallbackQuotes);
-      errors.push("All remote market sources timed out. Using local fallback prices (not real-time).");
+      errors.push("All remote market sources timed out. Using local fallback prices.");
     }
   }
 
   const snapshot = browserMarketSnapshotSchema.parse({
     tool: "browser",
+    mode: "remote",
     quotes,
     errors,
     fetchedAt: new Date().toISOString()

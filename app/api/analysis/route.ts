@@ -129,10 +129,11 @@ async function buildTradingContextMessage(prompt: string): Promise<SessionMessag
       return null;
     }
 
+    const marketLabel = marketSnapshot.mode === "remote" ? "实时行情" : "虚拟行情";
     const content = [
       "[系统注入的交易上下文，仅用于提升回答相关性]",
-      `实时行情抓取时间：${new Date(marketSnapshot.fetchedAt).toLocaleString()}`,
-      marketLines.length > 0 ? "实时行情快照：" : "实时行情快照：无",
+      `${marketLabel}抓取时间：${new Date(marketSnapshot.fetchedAt).toLocaleString()}`,
+      marketLines.length > 0 ? `${marketLabel}快照：` : `${marketLabel}快照：无`,
       ...(marketLines.length > 0 ? marketLines : []),
       marketErrorLines.length > 0 ? "行情错误：" : "",
       ...(marketErrorLines.length > 0 ? marketErrorLines : []),

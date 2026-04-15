@@ -1,10 +1,11 @@
 {
   "defaultSymbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+  "marketDataMode": "virtual",
   "newsLimit": 5,
   "requestTimeoutMs": 2500,
-  "marketCacheTtlMs": 15000,
+  "marketCacheTtlMs": 2000,
   "newsCacheTtlMs": 20000,
-  "combinedCacheTtlMs": 10000,
+  "combinedCacheTtlMs": 2000,
   "marketEndpoint": "https://api.binance.com/api/v3/ticker/24hr",
   "defaultNewsSource": "cryptocompare",
   "newsEndpoints": {

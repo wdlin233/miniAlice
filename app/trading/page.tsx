@@ -18,7 +18,7 @@ export default function TradingPage() {
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader>
           <CardTitle>模拟盘交易</CardTitle>
-          <CardDescription>价格优先读取真实行情，支持买入/卖出并实时更新资金与持仓。</CardDescription>
+          <CardDescription>价格来自本地虚拟行情快照，支持买入/卖出并更新资金与持仓。</CardDescription>
         </CardHeader>
         <CardContent>
           <PaperTradingPanel />
@@ -50,7 +50,7 @@ export default function TradingPage() {
       <Card className="border-0 bg-card/90 shadow-sm backdrop-blur">
         <CardHeader>
           <CardTitle>沙箱回放风控验证</CardTitle>
-          <CardDescription>在沙箱时间轴下回放交易风控决策一致性</CardDescription>
+          <CardDescription>在 sandbox playheadTime 之前回放历史订单，验证风控决策一致性</CardDescription>
         </CardHeader>
         <CardContent>
           <SandboxReplayPanel />

@@ -167,7 +167,36 @@ curl -X POST http://localhost:3000/api/sandbox?action=cleanup \
 }
 ```
 
-### 7. 验证实时状态未被污染
+### 7. 风控回放验证
+
+```bash
+curl -X POST http://localhost:3000/api/sandbox/replay \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sandboxId": "sandbox_1234567890_abcdef",
+    "limit": 20
+  }'
+```
+
+**说明**：
+- 会回放 `data/trading/orders.jsonl` 中 `createdAt <= sandbox.playheadTime` 的订单
+- 仅回放带有 `riskRequest` 的订单
+- 返回原始风控结果与当前规则下重算结果的 match/mismatch
+
+**预期响应**：
+```json
+{
+  "tool": "trading",
+  "sandboxId": "sandbox_1234567890_abcdef",
+  "playheadTime": "2026-04-11T00:00:00.000Z",
+  "total": 0,
+  "matched": 0,
+  "mismatched": 0,
+  "items": []
+}
+```
+
+### 8. 验证实时状态未被污染
 
 - 检查 `data/wallet/staging.json` 文件内容未改变
 - 检查 `data/sessions/test.session.jsonl` 文件内容未改变
